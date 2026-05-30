@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DevUtils — Free Online Developer Tools | JSON, Base64, JWT, Regex &amp; More</title>
+  <meta name="description" content="Free online developer tools. Format JSON, decode JWT, test regex, encode Base64, generate UUIDs and more. No signup, no tracking, works offline.">
+  <meta name="keywords" content="JSON formatter, Base64 encoder, JWT decoder, regex tester, UUID generator, URL encoder, HTML entity encoder, hash generator, developer tools">
+  <meta property="og:title" content="DevUtils — Free Online Developer Tools">
+  <meta property="og:description" content="8 essential developer tools in one beautiful interface. Free, no signup, works offline.">
+  <meta property="og:type" content="website">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>&#x26A1;</text></svg>">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <nav class="navbar">
+    <div class="nav-brand"><span class="logo">&#x26A1;</span><span class="brand-text">DevUtils</span></div>
+    <div class="nav-tagline">Free Developer Tools</div>
+  </nav>
+  <main class="container">
+    <div class="toolbar">
+      <div class="tool-tabs" id="toolTabs">
+        <button class="tool-tab active" data-tool="json">JSON</button>
+        <button class="tool-tab" data-tool="base64">Base64</button>
+        <button class="tool-tab" data-tool="jwt">JWT</button>
+        <button class="tool-tab" data-tool="regex">Regex</button>
+        <button class="tool-tab" data-tool="uuid">UUID</button>
+        <button class="tool-tab" data-tool="url">URL</button>
+        <button class="tool-tab" data-tool="html">HTML</button>
+        <button class="tool-tab" data-tool="hash">Hash</button>
+      </div>
+    </div>
+
+    <div class="tool-panel active" id="panel-json">
+      <div class="tool-header"><h2>JSON Formatter &amp; Validator</h2><p class="tool-desc">Paste JSON to format, validate, and beautify instantly.</p></div>
+      <div class="dual-pane">
+        <div class="pane"><div class="pane-header"><span>Input</span><button class="btn-small" onclick="formatJson()">Format &#x2192;</button></div><textarea id="jsonInput" placeholder='{"key":"value","array":[1,2,3]}'></textarea></div>
+        <div class="pane"><div class="pane-header"><span>Output</span><button class="btn-small" onclick="copyOutput('jsonOutput')">&#x1F4CB; Copy</button></div><textarea id="jsonOutput" readonly></textarea></div>
+      </div>
+      <div class="action-bar"><button class="btn" onclick="formatJson()">Format</button><button class="btn btn-secondary" onclick="minifyJson()">Minify</button><button class="btn btn-secondary" onclick="validateJson()">Validate</button></div>
+    </div>
+
+    <div class="tool-panel" id="panel-base64">
+      <div class="tool-header"><h2>Base64 Encode / Decode</h2><p class="tool-desc">Encode text to Base64 or decode Base64 back to text.</p></div>
+      <div class="dual-pane">
+        <div class="pane"><div class="pane-header"><span>Plain Text</span></div><textarea id="base64Input" placeholder="Enter text to encode..."></textarea></div>
+        <div class="pane"><div class="pane-header"><span>Base64</span><button class="btn-small" onclick="copyOutput('base64Output')">&#x1F4CB; Copy</button></div><textarea id="base64Output" readonly></textarea></div>
+      </div>
+      <div class="action-bar"><button class="btn" onclick="encodeBase64()">Encode &#x2192;</button><button class="btn btn-secondary" onclick="decodeBase64()">&#x2190; Decode</button></div>
+    </div>
+
+    <div class="tool-panel" id="panel-jwt">
+      <div class="tool-header"><h2>JWT Decoder</h2><p class="tool-desc">Decode JSON Web Tokens. See header, payload, and signature.</p></div>
+      <div class="single-pane"><textarea id="jwtInput" placeholder="Paste your JWT token here (eyJhbGciOiJIUzI1NiIs...)"></textarea></div>
+      <div class="action-bar"><button class="btn" onclick="decodeJwt()">Decode</button></div>
+      <div id="jwtResult" class="jwt-sections" style="display:none">
+        <div class="jwt-part"><div class="pane-header"><span>&#x1F534; Header</span><button class="btn-small" onclick="copyText(document.getElementById('jwtHeader').textContent)">&#x1F4CB;</button></div><pre id="jwtHeader" class="code-block"></pre></div>
+        <div class="jwt-part"><div class="pane-header"><span>&#x1F7E3; Payload</span><button class="btn-small" onclick="copyText(document.getElementById('jwtPayload').textContent)">&#x1F4CB;</button></div><pre id="jwtPayload" class="code-block"></pre></div>
+        <div class="jwt-part"><div class="pane-header"><span>&#x1F535; Signature</span></div><pre id="jwtSignature" class="code-block"></pre></div>
+      </div>
+    </div>
+
+    <div class="tool-panel" id="panel-regex">
+      <div class="tool-header"><h2>Regex Tester</h2><p class="tool-desc">Test regular expressions with real-time matching and group capture.</p></div>
+      <div class="regex-inputs">
+        <div class="regex-row"><span class="regex-slash">/</span><input type="text" id="regexPattern" placeholder="regex pattern..." oninput="testRegex()"><span class="regex-slash">/</span><input type="text" id="regexFlags" value="g" placeholder="flags" oninput="testRegex()" style="width:60px"></div>
+        <textarea id="regexTestString" placeholder="Test string here..." oninput="testRegex()"></textarea>
+      </div>
+      <div id="regexResult" class="regex-result"></div>
+    </div>
+
+    <div class="tool-panel" id="panel-uuid">
+      <div class="tool-header"><h2>UUID Generator</h2><p class="tool-desc">Generate random UUIDs (v4). One or batch.</p></div>
+      <div class="uuid-controls">
+        <label>Count: <input type="number" id="uuidCount" value="5" min="1" max="100"></label>
+        <label><input type="checkbox" id="uuidUppercase"> Uppercase</label>
+        <label><input type="checkbox" id="uuidNoDash"> No dashes</label>
+      </div>
+      <div class="action-bar"><button class="btn" onclick="generateUuids()">Generate</button><button class="btn btn-secondary" onclick="copyOutput('uuidOutput')">&#x1F4CB; Copy All</button></div>
+      <textarea id="uuidOutput" readonly class="uuid-output"></textarea>
+    </div>
+
+    <div class="tool-panel" id="panel-url">
+      <div class="tool-header"><h2>URL Encode / Decode</h2><p class="tool-desc">Encode or decode URL components.</p></div>
+      <div class="dual-pane">
+        <div class="pane"><div class="pane-header"><span>Decoded</span></div><textarea id="urlInput" placeholder='Hello World! foo=bar&amp;baz=qux'></textarea></div>
+        <div class="pane"><div class="pane-header"><span>Encoded</span><button class="btn-small" onclick="copyOutput('urlOutput')">&#x1F4CB; Copy</button></div><textarea id="urlOutput" readonly></textarea></div>
+      </div>
+      <div class="action-bar"><button class="btn" onclick="encodeUrl()">Encode &#x2192;</button><button class="btn btn-secondary" onclick="decodeUrl()">&#x2190; Decode</button></div>
+    </div>
+
+    <div class="tool-panel" id="panel-html">
+      <div class="tool-header"><h2>HTML Entity Encoder / Decoder</h2><p class="tool-desc">Convert between HTML entities and plain text.</p></div>
+      <div class="dual-pane">
+        <div class="pane"><div class="pane-header"><span>Plain Text</span></div><textarea id="htmlInput" placeholder='<div>Hello &amp; "World"</div>'></textarea></div>
+        <div class="pane"><div class="pane-header"><span>HTML Entities</span><button class="btn-small" onclick="copyOutput('htmlOutput')">&#x1F4CB; Copy</button></div><textarea id="htmlOutput" readonly></textarea></div>
+      </div>
+      <div class="action-bar"><button class="btn" onclick="encodeHtml()">Encode &#x2192;</button><button class="btn btn-secondary" onclick="decodeHtml()">&#x2190; Decode</button></div>
+    </div>
+
+    <div class="tool-panel" id="panel-hash">
+      <div class="tool-header"><h2>Hash Generator</h2><p class="tool-desc">Generate SHA-1, SHA-256, SHA-512 hashes. Uses Web Crypto API.</p></div>
+      <div class="single-pane"><textarea id="hashInput" placeholder="Enter text to hash..." oninput="generateHashes()"></textarea></div>
+      <div class="hash-results">
+        <div class="hash-row"><span class="hash-label">SHA-1</span><code id="hashSha1" class="hash-value">&#x2014;</code><button class="btn-small" onclick="copyText(document.getElementById('hashSha1').textContent)">&#x1F4CB;</button></div>
+        <div class="hash-row"><span class="hash-label">SHA-256</span><code id="hashSha256" class="hash-value">&#x2014;</code><button class="btn-small" onclick="copyText(document.getElementById('hashSha256').textContent)">&#x1F4CB;</button></div>
+        <div class="hash-row"><span class="hash-label">SHA-512</span><code id="hashSha512" class="hash-value">&#x2014;</code><button class="btn-small" onclick="copyText(document.getElementById('hashSha512').textContent)">&#x1F4CB;</button></div>
+      </div>
+    </div>
+
+    <section class="products-section">
+      <h2 class="section-title">&#x1F680; Level Up Your Dev Game</h2>
+      <p class="section-subtitle">Premium developer tools &amp; boilerplates</p>
+      <div class="product-grid">
+        <a href="https://github.com/tyr1105/agentkit" class="product-card" target="_blank" rel="noopener"><div class="product-icon">&#x1F916;</div><h3>AgentKit</h3><p>6 AI agent templates. OpenAI, Anthropic, Vercel AI SDK.</p><span class="product-tag">Free + Pro</span></a>
+        <a href="https://github.com/tyr1105/launchkit" class="product-card" target="_blank" rel="noopener"><div class="product-icon">&#x1F680;</div><h3>LaunchKit</h3><p>Ship SaaS in days. Auth + Payments + DB + UI.</p><span class="product-tag">Open Source</span></a>
+        <a href="https://github.com/tyr1105/shipready" class="product-card" target="_blank" rel="noopener"><div class="product-icon">&#x26A1;</div><h3>ShipReady</h3><p>Next.js 16 SaaS. Supabase + Stripe + shadcn/ui.</p><span class="product-tag">Open Source</span></a>
+        <a href="https://github.com/tyr1105/taildash" class="product-card" target="_blank" rel="noopener"><div class="product-icon">&#x1F3A8;</div><h3>TailDash</h3><p>50+ Tailwind dashboard components. Dark mode.</p><span class="product-tag">Free + Pro</span></a>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <p>DevUtils &#x2014; Free developer tools. No tracking, no signup, works offline.</p>
+    <p class="footer-links"><a href="https://github.com/tyr1105/devutils" target="_blank" rel="noopener">GitHub</a> &#xB7; Built with &#x2764;&#xFE0F; by <a href="https://github.com/tyr1105" target="_blank" rel="noopener">@tyr1105</a></p>
+  </footer>
+  <script src="js/app.js"></script>
+</body>
+</html>
