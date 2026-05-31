@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QR Code Generator - DevUtils</title>
+<link rel="stylesheet" href="../css/style.css">
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+<style>
+.tool-layout{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;max-width:1000px;margin:0 auto}
+@media(max-width:768px){.tool-layout{grid-template-columns:1fr}}
+.panel{background:var(--bg,#fff);border:1px solid var(--border,#ddd);border-radius:10px;padding:1.25rem}
+.section-title{font-size:.9rem;font-weight:700;margin-bottom:.75rem;text-transform:uppercase;letter-spacing:.5px;color:var(--primary,#4f46e5)}
+.input-group{margin-bottom:.75rem}
+.input-group label{display:block;font-weight:600;margin-bottom:.25rem;font-size:.85rem;color:var(--text-secondary,#666)}
+.input-group input,.input-group textarea,.input-group select{width:100%;padding:.5rem;border:1px solid var(--border,#ddd);border-radius:6px;font-size:.9rem;box-sizing:border-box;background:var(--bg,#fff);color:var(--text,#222)}
+.input-group textarea{font-family:monospace;min-height:100px;resize:vertical}
+.options-row{display:flex;gap:1rem;flex-wrap:wrap;margin-bottom:1rem}
+.options-row .input-group{flex:1;min-width:120px;margin-bottom:0}
+.color-pair{display:flex;gap:.75rem;align-items:flex-end;margin-bottom:.75rem}
+.color-pair .input-group{flex:1;margin-bottom:0}
+.color-pair input[type="color"]{height:38px;padding:2px;cursor:pointer}
+.presets{display:flex;flex-wrap:wrap;gap:.5rem;margin-bottom:1rem}
+.preset-btn{padding:.4rem .8rem;border:1px solid var(--border,#ddd);border-radius:6px;cursor:pointer;font-size:.8rem;background:var(--bg-secondary,#f5f5f5);transition:all .2s}
+.preset-btn:hover,.preset-btn.active{background:var(--primary,#4f46e5);color:#fff;border-color:var(--primary,#4f46e5)}
+.qr-output{text-align:center;padding:1.5rem}
+.qr-output canvas{border-radius:8px;max-width:100%}
+.btn{padding:.5rem 1rem;border:1px solid var(--border,#ddd);border-radius:6px;cursor:pointer;font-size:.85rem;transition:all .2s}
+.btn-primary{background:var(--primary,#4f46e5);color:#fff;border-color:var(--primary,#4f46e5)}
+.btn-primary:hover{opacity:.85}
+.btn-secondary{background:var(--bg-secondary,#f5f5f5)}
+.btn-secondary:hover{background:var(--border,#ddd)}
+.action-row{display:flex;gap:.5rem;justify-content:center;margin-top:1rem}
+.wifi-fields{display:none;margin-top:.75rem;padding:.75rem;background:var(--bg-secondary,#f9f9f9);border-radius:8px;border:1px solid var(--border,#eee)}
+.wifi-fields.visible{display:block}
+</style>
+</head>
+<body>
+<nav class="navbar"><div class="navbar-inner">
+<a class="navbar-brand" href="../index.html">DevUtils</a>
+<button class="menu-toggle" onclick="document.querySelector('.navbar-links').classList.toggle('open')">☰</button>
+<ul class="navbar-links">
+  <li><a href="json-formatter.html">JSON</a></li>
+  <li><a href="base64.html">Base64</a></li>
+  <li><a href="jwt-decoder.html">JWT</a></li>
+  <li><a href="regex-tester.html">Regex</a></li>
+  <li><a href="color-picker.html">Color</a></li>
+  <li><a href="css-gradient.html">Gradient</a></li>
+  <li><a href="markdown.html">Markdown</a></li>
+  <li><a href="qr-generator.html">QR</a></li>
+  <li><a href="url-codec.html">URL</a></li>
+  <li><a href="hash-generator.html">Hash</a></li>
+  <li><a href="timestamp.html">Timestamp</a></li>
+  <li><a href="lorem-ipsum.html">Lorem</a></li>
+</ul>
+</div></nav>
+
+<main class="container">
+  <div class="tool-header">
+    <h1>QR Code Generator</h1>
+    <p>Generate QR codes for URLs, text, WiFi, emails, phone numbers, and vCards.</p>
+  </div>
+  <div class="tool-layout">
+    <div class="panel">
+      <div class="section-title">Quick Presets</div>
+      <div class="presets">
+        <button class="preset-btn active" onclick="setPreset('text',this)">Text / URL</button>
+        <button class="preset-btn" onclick="setPreset('email',this)">Email</button>
+        <button class="preset-btn" onclick="setPreset('phone',this)">Phone</button>
+        <button class="preset-btn" onclick="setPreset('wifi',this)">WiFi</button>
+        <button class="preset-btn" onclick="setPreset('vcard',this)">vCard</button>
+      </div>
+
+      <div id="textInputArea">
+        <div class="input-group">
+          <label>Content</label>
+          <textarea id="qrText" placeholder="Enter URL or text..." oninput="generateQR()">https://example.com</textarea>
+        </div>
+      </div>
+
+      <div id="emailFields" style="display:none">
+        <div class="input-group"><label>Email Address</label><input type="email" id="emailAddr" placeholder="user@example.com" oninput="buildEmail()"></div>
+        <div class="input-group"><label>Subject</label><input type="text" id="emailSubject" placeholder="Hello" oninput="buildEmail()"></div>
+        <div class="input-group"><label>Body</label><textarea id="emailBody" placeholder="Message body..." oninput="buildEmail()" rows="3"></textarea></div>
+      </div>
+
+      <div id="phoneFields" style="display:none">
+        <div class="input-group"><label>Phone Number</label><input type="tel" id="phoneNum" placeholder="+1234567890" oninput="buildPhone()"></div>
+      </div>
+
+      <div id="wifiFields" class="wifi-fields">
+        <div class="input-group"><label>Network Name (SSID)</label><input type="text" id="wifiSSID" placeholder="MyNetwork" oninput="buildWifi()"></div>
+        <div class="input-group"><label>Password</label><input type="text" id="wifiPass" placeholder="password123" oninput="buildWifi()"></div>
+        <div class="input-group"><label>Encryption</label>
+          <select id="wifiEnc" onchange="buildWifi()">
+            <option value="WPA">WPA/WPA2</option>
+            <option value="WEP">WEP</option>
+            <option value="nopass">None</option>
+          </select>
+        </div>
+      </div>
+
+      <div id="vcardFields" style="display:none">
+        <div class="input-group"><label>Full Name</label><input type="text" id="vcardName" placeholder="John Doe" oninput="buildVcard()"></div>
+        <div class="input-group"><label>Phone</label><input type="tel" id="vcardPhone" placeholder="+1234567890" oninput="buildVcard()"></div>
+        <div class="input-group"><label>Email</label><input type="email" id="vcardEmail" placeholder="john@example.com" oninput="buildVcard()"></div>
+        <div class="input-group"><label>Organization</label><input type="text" id="vcardOrg" placeholder="Company Inc." oninput="buildVcard()"></div>
+        <div class="input-group"><label>Website</label><input type="url" id="vcardUrl" placeholder="https://example.com" oninput="buildVcard()"></div>
+      </div>
+
+      <div class="section-title" style="margin-top:1rem">Options</div>
+      <div class="options-row">
+        <div class="input-group">
+          <label>Size</label>
+          <select id="qrSize" onchange="generateQR()">
+            <option value="128">Small (128px)</option>
+            <option value="256" selected>Medium (256px)</option>
+            <option value="512">Large (512px)</option>
+          </select>
+        </div>
+        <div class="input-group">
+          <label>Error Correction</label>
+          <select id="qrEC" onchange="generateQR()">
+            <option value="L">Low (L)</option>
+            <option value="M" selected>Medium (M)</option>
+            <option value="Q">Quartile (Q)</option>
+            <option value="H">High (H)</option>
+          </select>
+        </div>
+      </div>
+      <div class="color-pair">
+        <div class="input-group">
+          <label>Foreground</label>
+          <input type="color" id="qrFg" value="#000000" onchange="generateQR()">
+        </div>
+        <div class="input-group">
+          <label>Background</label>
+          <input type="color" id="qrBg" value="#ffffff" onchange="generateQR()">
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="section-title">QR Code</div>
+      <div class="qr-output">
+        <canvas id="qrCanvas"></canvas>
+      </div>
+      <div class="action-row">
+        <button class="btn btn-primary" onclick="downloadQR()">Download PNG</button>
+      </div>
+    </div>
+  </div>
+</main>
+
+<footer class="footer"><p>DevUtils - Free developer tools in your browser.</p></footer>
+
+<script>
+var currentPreset='text';
+var currentContent='https://example.com';
+
+function setPreset(type,btn){
+  currentPreset=type;
+  document.querySelectorAll('.preset-btn').forEach(function(b){b.classList.remove('active');});
+  btn.classList.add('active');
+
+  document.getElementById('textInputArea').style.display='none';
+  document.getElementById('emailFields').style.display='none';
+  document.getElementById('phoneFields').style.display='none';
+  document.getElementById('wifiFields').classList.remove('visible');
+  document.getElementById('vcardFields').style.display='none';
+
+  switch(type){
+    case 'text':
+      document.getElementById('textInputArea').style.display='';
+      break;
+    case 'email':
+      document.getElementById('emailFields').style.display='';
+      break;
+    case 'phone':
+      document.getElementById('phoneFields').style.display='';
+      break;
+    case 'wifi':
+      document.getElementById('wifiFields').classList.add('visible');
+      break;
+    case 'vcard':
+      document.getElementById('vcardFields').style.display='';
+      break;
+  }
+  generateQR();
+}
+
+function buildEmail(){
+  var addr=document.getElementById('emailAddr').value;
+  var subj=document.getElementById('emailSubject').value;
+  var body=document.getElementById('emailBody').value;
+  var mailto='mailto:'+addr;
+  var params=[];
+  if(subj) params.push('subject='+encodeURIComponent(subj));
+  if(body) params.push('body='+encodeURIComponent(body));
+  if(params.length) mailto+='?'+params.join('&');
+  currentContent=mailto;
+  generateQR();
+}
+
+function buildPhone(){
+  var num=document.getElementById('phoneNum').value;
+  currentContent='tel:'+num;
+  generateQR();
+}
+
+function buildWifi(){
+  var ssid=document.getElementById('wifiSSID').value;
+  var pass=document.getElementById('wifiPass').value;
+  var enc=document.getElementById('wifiEnc').value;
+  currentContent='WIFI:T:'+enc+';S:'+ssid+';P:'+pass+';;';
+  generateQR();
+}
+
+function buildVcard(){
+  var name=document.getElementById('vcardName').value||'';
+  var phone=document.getElementById('vcardPhone').value||'';
+  var email=document.getElementById('vcardEmail').value||'';
+  var org=document.getElementById('vcardOrg').value||'';
+  var url=document.getElementById('vcardUrl').value||'';
+  var parts=['BEGIN:VCARD','VERSION:3.0'];
+  if(name) parts.push('FN:'+name);
+  if(org) parts.push('ORG:'+org);
+  if(phone) parts.push('TEL:'+phone);
+  if(email) parts.push('EMAIL:'+email);
+  if(url) parts.push('URL:'+url);
+  parts.push('END:VCARD');
+  currentContent=parts.join('\n');
+  generateQR();
+}
+
+function generateQR(){
+  if(currentPreset==='text'){
+    currentContent=document.getElementById('qrText').value;
+  }
+  if(!currentContent){
+    var canvas=document.getElementById('qrCanvas');
+    var ctx=canvas.getContext('2d');
+    canvas.width=256;canvas.height=256;
+    ctx.fillStyle='#f5f5f5';ctx.fillRect(0,0,256,256);
+    ctx.fillStyle='#999';ctx.font='14px sans-serif';ctx.textAlign='center';
+    ctx.fillText('Enter content to generate QR',128,130);
+    return;
+  }
+  var size=parseInt(document.getElementById('qrSize').value);
+  var ec=document.getElementById('qrEC').value;
+  var fg=document.getElementById('qrFg').value;
+  var bg=document.getElementById('qrBg').value;
+  var ecMap={L:QRCode.CorrectLevel.L,M:QRCode.CorrectLevel.M,Q:QRCode.CorrectLevel.Q,H:QRCode.CorrectLevel.H};
+
+  var canvas=document.getElementById('qrCanvas');
+  QRCode.toCanvas(canvas,currentContent,{
+    width:size,
+    margin:2,
+    color:{dark:fg,light:bg},
+    errorCorrectionLevel:ec
+  },function(error){
+    if(error){console.error(error);}
+  });
+}
+
+function downloadQR(){
+  var canvas=document.getElementById('qrCanvas');
+  var link=document.createElement('a');
+  link.download='qrcode.png';
+  link.href=canvas.toDataURL('image/png');
+  link.click();
+}
+
+// Initial generation
+generateQR();
+</script>
+</body>
+</html>

@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JSON Formatter - DevUtils</title>
+<link rel="stylesheet" href="../css/style.css">
+<style>
+  .tool-header{background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:#fff;padding:2rem 1rem;text-align:center}
+  .tool-header h1{margin:0;font-size:1.8rem}
+  .tool-header p{margin:.5rem 0 0;opacity:.9}
+  .tool-area{max-width:1100px;margin:1.5rem auto;padding:0 1rem}
+  .panels{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem}
+  @media(max-width:768px){.panels{grid-template-columns:1fr}}
+  .panel{background:#fff;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,.08);padding:1rem;display:flex;flex-direction:column}
+  .panel h2{margin:0 0 .75rem;font-size:1.1rem;color:#333;border-bottom:2px solid #eee;padding-bottom:.5rem}
+  textarea{width:100%;min-height:320px;font-family:'Fira Code',monospace,Consolas;font-size:.85rem;border:1px solid #ddd;border-radius:6px;padding:.75rem;resize:vertical;background:#fafafa;color:#333;box-sizing:border-box}
+  textarea:focus{outline:none;border-color:#667eea;box-shadow:0 0 0 3px rgba(102,126,234,.15)}
+  .btn-row{display:flex;flex-wrap:wrap;gap:.5rem;margin:.75rem 0}
+  .btn{padding:.5rem 1rem;border:none;border-radius:6px;cursor:pointer;font-size:.85rem;font-weight:600;transition:all .2s}
+  .btn:hover{transform:translateY(-1px);box-shadow:0 2px 6px rgba(0,0,0,.15)}
+  .btn:active{transform:translateY(0)}
+  .btn-primary{background:#667eea;color:#fff}
+  .btn-secondary{background:#6c757d;color:#fff}
+  .btn-success{background:#28a745;color:#fff}
+  .btn-warning{background:#ffc107;color:#333}
+  .btn-danger{background:#dc3545;color:#fff}
+  .output-area{min-height:320px;background:#1e1e2e;border-radius:6px;padding:.75rem;font-family:'Fira Code',monospace,Consolas;font-size:.85rem;overflow:auto;color:#cdd6f4;white-space:pre-wrap;word-break:break-word;line-height:1.5}
+  .badge{display:inline-block;padding:.25rem .6rem;border-radius:20px;font-size:.8rem;font-weight:600;margin-bottom:.5rem}
+  .badge-valid{background:#d4edda;color:#155724}
+  .badge-invalid{background:#f8d7da;color:#721c24}
+  .json-key{color:#89b4fa}
+  .json-string{color:#a6e3a1}
+  .json-number{color:#fab387}
+  .json-bool,.json-null{color:#cba6f7}
+  .json-bracket{color:#f9e2af}
+  .error-msg{background:#f8d7da;color:#721c24;border:1px solid #f5c6cb;border-radius:6px;padding:.75rem;margin-top:.5rem;font-family:monospace;white-space:pre-wrap;display:none}
+  footer{text-align:center;padding:2rem 1rem;color:#888;font-size:.85rem}
+</style>
+</head>
+<body>
+<nav class="navbar"><div class="navbar-inner">
+<a class="navbar-brand" href="../index.html">⚡ DevUtils</a>
+<button class="menu-toggle" onclick="document.querySelector('.navbar-links').classList.toggle('open')">☰</button>
+<ul class="navbar-links">
+  <li><a href="json-formatter.html">JSON</a></li>
+  <li><a href="base64.html">Base64</a></li>
+  <li><a href="jwt-decoder.html">JWT</a></li>
+  <li><a href="regex-tester.html">Regex</a></li>
+  <li><a href="color-picker.html">Color</a></li>
+  <li><a href="css-gradient.html">Gradient</a></li>
+  <li><a href="markdown.html">Markdown</a></li>
+  <li><a href="qr-generator.html">QR</a></li>
+  <li><a href="url-codec.html">URL</a></li>
+  <li><a href="hash-generator.html">Hash</a></li>
+  <li><a href="timestamp.html">Timestamp</a></li>
+  <li><a href="lorem-ipsum.html">Lorem</a></li>
+</ul>
+</div></nav>
+
+<div class="tool-header">
+  <h1>🔧 JSON Formatter</h1>
+  <p>Format, minify, validate and explore JSON with syntax highlighting</p>
+</div>
+
+<div class="tool-area">
+  <div id="validationBadge"></div>
+  <div class="panels">
+    <div class="panel">
+      <h2>📥 Input</h2>
+      <textarea id="jsonInput" placeholder='Paste your JSON here...\n\nExample:\n{"name":"John","age":30,"active":true,"address":{"city":"NYC"},"hobbies":["coding","music"], "notes":null}'></textarea>
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="formatJSON()">Format</button>
+        <button class="btn btn-warning" onclick="minifyJSON()">Minify</button>
+        <button class="btn btn-success" onclick="validateJSON()">Validate</button>
+        <button class="btn btn-secondary" onclick="copyOutput()">📋 Copy Output</button>
+        <button class="btn btn-danger" onclick="clearAll()">Clear</button>
+      </div>
+      <div id="errorMsg" class="error-msg"></div>
+    </div>
+    <div class="panel">
+      <h2>📤 Output</h2>
+      <div id="jsonOutput" class="output-area">Formatted JSON will appear here...</div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <p>JSON Formatter — Part of <a href="../index.html">DevUtils</a> toolkit</p>
+</footer>
+
+<script>
+const input = document.getElementById('jsonInput');
+const output = document.getElementById('jsonOutput');
+const badge = document.getElementById('validationBadge');
+const errorEl = document.getElementById('errorMsg');
+
+function showError(msg) {
+  errorEl.textContent = msg;
+  errorEl.style.display = 'block';
+}
+
+function hideError() {
+  errorEl.style.display = 'none';
+}
+
+function setBadge(valid) {
+  badge.innerHTML = valid
+    ? '<span class="badge badge-valid">Valid ✅</span>'
+    : '<span class="badge badge-invalid">Invalid ❌</span>';
+}
+
+function clearBadge() {
+  badge.innerHTML = '';
+}
+
+function getLineCol(jsonStr, pos) {
+  const lines = jsonStr.substring(0, pos).split('\n');
+  return { line: lines.length, col: lines[lines.length - 1].length + 1 };
+}
+
+function syntaxHighlight(json) {
+  // Escape HTML first
+  json = json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  // Match tokens
+  return json.replace(
+    /("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g,
+    function(match) {
+      let cls = 'json-number';
+      if (/^"/.test(match)) {
+        if (/:$/.test(match)) {
+          cls = 'json-key';
+        } else {
+          cls = 'json-string';
+        }
+      } else if (/true|false/.test(match)) {
+        cls = 'json-bool';
+      } else if (/null/.test(match)) {
+        cls = 'json-null';
+      }
+      return '<span class="' + cls + '">' + match + '</span>';
+    }
+  );
+}
+
+function formatJSON() {
+  hideError();
+  const raw = input.value.trim();
+  if (!raw) { output.textContent = 'No input provided.'; clearBadge(); return; }
+  try {
+    const parsed = JSON.parse(raw);
+    const formatted = JSON.stringify(parsed, null, 2);
+    output.innerHTML = syntaxHighlight(formatted);
+    setBadge(true);
+  } catch (e) {
+    setBadge(false);
+    // Try to extract position info
+    const posMatch = e.message.match(/position\s+(\d+)/i);
+    let detail = e.message;
+    if (posMatch) {
+      const pos = parseInt(posMatch[1]);
+      const lc = getLineCol(raw, pos);
+      detail += '\n\n📍 Error near line ' + lc.line + ', column ' + lc.col;
+    }
+    showError(detail);
+    output.textContent = 'Invalid JSON — see error below.';
+  }
+}
+
+function minifyJSON() {
+  hideError();
+  const raw = input.value.trim();
+  if (!raw) { output.textContent = 'No input provided.'; clearBadge(); return; }
+  try {
+    const parsed = JSON.parse(raw);
+    const minified = JSON.stringify(parsed);
+    output.innerHTML = syntaxHighlight(minified);
+    setBadge(true);
+  } catch (e) {
+    setBadge(false);
+    const posMatch = e.message.match(/position\s+(\d+)/i);
+    let detail = e.message;
+    if (posMatch) {
+      const pos = parseInt(posMatch[1]);
+      const lc = getLineCol(raw, pos);
+      detail += '\n\n📍 Error near line ' + lc.line + ', column ' + lc.col;
+    }
+    showError(detail);
+    output.textContent = 'Invalid JSON — see error below.';
+  }
+}
+
+function validateJSON() {
+  hideError();
+  const raw = input.value.trim();
+  if (!raw) { setBadge(false); showError('No input to validate.'); return; }
+  try {
+    JSON.parse(raw);
+    setBadge(true);
+    output.textContent = '✅ JSON is valid!';
+  } catch (e) {
+    setBadge(false);
+    const posMatch = e.message.match(/position\s+(\d+)/i);
+    let detail = e.message;
+    if (posMatch) {
+      const pos = parseInt(posMatch[1]);
+      const lc = getLineCol(raw, pos);
+      detail += '\n\n📍 Error near line ' + lc.line + ', column ' + lc.col;
+    }
+    showError(detail);
+    output.textContent = '❌ JSON is invalid — see error details.';
+  }
+}
+
+function copyOutput() {
+  const raw = input.value.trim();
+  if (!raw) return;
+  try {
+    const parsed = JSON.parse(raw);
+    const text = JSON.stringify(parsed, null, 2);
+    navigator.clipboard.writeText(text).then(() => {
+      const btn = document.querySelector('.btn-secondary');
+      const orig = btn.textContent;
+      btn.textContent = '✅ Copied!';
+      setTimeout(() => btn.textContent = orig, 1500);
+    });
+  } catch (e) {
+    // Copy raw input if unparseable
+    navigator.clipboard.writeText(raw).then(() => {
+      const btn = document.querySelector('.btn-secondary');
+      const orig = btn.textContent;
+      btn.textContent = '✅ Copied raw!';
+      setTimeout(() => btn.textContent = orig, 1500);
+    });
+  }
+}
+
+function clearAll() {
+  input.value = '';
+  output.innerHTML = 'Formatted JSON will appear here...';
+  clearBadge();
+  hideError();
+}
+
+// Allow Tab key in textarea
+input.addEventListener('keydown', function(e) {
+  if (e.key === 'Tab') {
+    e.preventDefault();
+    const start = this.selectionStart;
+    const end = this.selectionEnd;
+    this.value = this.value.substring(0, start) + '  ' + this.value.substring(end);
+    this.selectionStart = this.selectionEnd = start + 2;
+  }
+});
+</script>
+</body>
+</html>

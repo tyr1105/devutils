@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hash Generator - DevUtils</title>
+<link rel="stylesheet" href="../css/style.css">
+<style>
+.tool-container{max-width:960px;margin:0 auto;padding:20px}
+.tool-header{text-align:center;margin-bottom:24px}
+.tool-header h1{font-size:1.8rem;margin-bottom:6px}
+.tool-header p{color:#888;font-size:.95rem}
+.panel{background:var(--card-bg,#1e1e2e);border-radius:10px;padding:20px;margin-bottom:16px;border:1px solid var(--border,#333)}
+.panel textarea{width:100%;min-height:100px;background:var(--input-bg,#11111b);color:var(--text,#cdd6f4);border:1px solid var(--border,#333);border-radius:8px;padding:12px;font-family:monospace;font-size:.9rem;resize:vertical;box-sizing:border-box}
+.panel textarea:focus{outline:none;border-color:var(--accent,#89b4fa)}
+.btn{padding:8px 16px;border:none;border-radius:6px;cursor:pointer;font-size:.85rem;font-weight:600;transition:background .2s}
+.btn-primary{background:var(--accent,#89b4fa);color:#111}
+.btn-secondary{background:var(--surface2,#313244);color:var(--text,#cdd6f4)}
+.btn:hover{opacity:.85}
+.btn-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.hash-row{display:flex;align-items:center;gap:10px;margin-bottom:12px;padding:10px;background:var(--surface2,#313244);border-radius:8px}
+.hash-row label{min-width:70px;font-weight:700;font-size:.85rem;color:var(--accent,#89b4fa)}
+.hash-row .hash-val{flex:1;font-family:monospace;font-size:.82rem;color:var(--text,#cdd6f4);word-break:break-all;user-select:all}
+.hash-row .copy-btn{padding:4px 10px;font-size:.75rem}
+.drop-zone{border:2px dashed var(--border,#555);border-radius:10px;padding:32px;text-align:center;color:#888;cursor:pointer;transition:border-color .2s,color .2s;margin-bottom:16px}
+.drop-zone.drag-over{border-color:var(--accent,#89b4fa);color:var(--accent,#89b4fa)}
+.drop-zone p{margin:4px 0;font-size:.9rem}
+.toggle-row{display:flex;align-items:center;gap:12px;margin-bottom:12px;font-size:.85rem}
+.toggle-row label{display:flex;align-items:center;gap:5px;cursor:pointer}
+.file-name{font-size:.82rem;color:#a6adc8;margin-top:6px}
+</style>
+</head>
+<body>
+<nav class="navbar"><div class="navbar-inner">
+<a class="navbar-brand" href="../index.html">⚡ DevUtils</a>
+<button class="menu-toggle" onclick="document.querySelector('.navbar-links').classList.toggle('open')">☰</button>
+<ul class="navbar-links">
+  <li><a href="json-formatter.html">JSON</a></li>
+  <li><a href="base64.html">Base64</a></li>
+  <li><a href="jwt-decoder.html">JWT</a></li>
+  <li><a href="regex-tester.html">Regex</a></li>
+  <li><a href="color-picker.html">Color</a></li>
+  <li><a href="css-gradient.html">Gradient</a></li>
+  <li><a href="markdown.html">Markdown</a></li>
+  <li><a href="qr-generator.html">QR</a></li>
+  <li><a href="url-codec.html">URL</a></li>
+  <li><a href="hash-generator.html">Hash</a></li>
+  <li><a href="timestamp.html">Timestamp</a></li>
+  <li><a href="lorem-ipsum.html">Lorem</a></li>
+</ul>
+</div></nav>
+
+<div class="tool-container">
+  <div class="tool-header">
+    <h1>🔐 Hash Generator</h1>
+    <p>Generate MD5, SHA-1, SHA-256, SHA-512 hashes from text or files</p>
+  </div>
+
+  <div class="panel">
+    <label style="font-weight:600;font-size:.9rem;margin-bottom:6px;display:block">Input Text</label>
+    <textarea id="inputText" placeholder="Enter text to hash..." spellcheck="false"></textarea>
+  </div>
+
+  <div class="drop-zone" id="dropZone">
+    <p>📁 <strong>Drag and drop a file here</strong></p>
+    <p style="font-size:.8rem">or click to browse</p>
+    <input type="file" id="fileInput" style="display:none">
+    <div class="file-name" id="fileName"></div>
+  </div>
+
+  <div class="btn-row">
+    <button class="btn btn-primary" onclick="hashText()">▶ Generate Hashes</button>
+    <button class="btn btn-secondary" onclick="clearAll()">✕ Clear</button>
+  </div>
+
+  <div class="toggle-row">
+    <span style="font-weight:600">Case:</span>
+    <label><input type="radio" name="case" value="lower" checked> lowercase</label>
+    <label><input type="radio" name="case" value="upper"> UPPERCASE</label>
+  </div>
+
+  <div class="panel">
+    <div class="hash-row"><label>MD5</label><span class="hash-val" id="hashMD5">—</span><button class="btn btn-secondary copy-btn" onclick="copyHash('hashMD5')">📋</button></div>
+    <div class="hash-row"><label>SHA-1</label><span class="hash-val" id="hashSHA1">—</span><button class="btn btn-secondary copy-btn" onclick="copyHash('hashSHA1')">📋</button></div>
+    <div class="hash-row"><label>SHA-256</label><span class="hash-val" id="hashSHA256">—</span><button class="btn btn-secondary copy-btn" onclick="copyHash('hashSHA256')">📋</button></div>
+    <div class="hash-row"><label>SHA-512</label><span class="hash-val" id="hashSHA512">—</span><button class="btn btn-secondary copy-btn" onclick="copyHash('hashSHA512')">📋</button></div>
+  </div>
+</div>
+
+<footer style="text-align:center;padding:24px;color:#666;font-size:.8rem">
+  DevUtils — Developer Tools for Everyday Use
+</footer>
+
+<script>
+/* MD5 Implementation */
+var MD5=function(){function safeAdd(x,y){var lsw=(x&0xFFFF)+(y&0xFFFF);return(x>>16)+(y>>16)+(lsw>>16)<<16|lsw&0xFFFF}
+function bitRotateLeft(num,cnt){return num<<cnt|num>>>32-cnt}
+function md5cmn(q,a,b,x,s,t){return safeAdd(safeAdd(a,q),safeAdd(x,t))}
+function md5ff(a,b,c,d,x,s,t){return md5cmn(b&c|~b&d,a,b,x,s,t)}
+function md5gg(a,b,c,d,x,s,t){return md5cmn(b&d|c&~d,a,b,x,s,t)}
+function md5hh(a,b,c,d,x,s,t){return md5cmn(b^c^d,a,b,x,s,t)}
+function md5ii(a,b,c,d,x,s,t){return md5cmn(c^(b|~d),a,b,x,s,t)}
+function binlMD5(x,len){x[len>>5]|=0x80<<len%32;x[(len+64>>>9<<4)+14]=len;var a=1732584193,b=-271733879,c=-1732584194,d=271733878;
+for(var i=0;i<x.length;i+=16){var oa=a,ob=b,oc=c,od=d;
+a=md5ff(a,b,c,d,x[i],7,-680876936);d=md5ff(d,a,b,c,x[i+1],12,-389564586);c=md5ff(c,d,a,b,x[i+2],17,606105819);b=md5ff(b,c,d,a,x[i+3],22,-1044525330);
+a=md5ff(a,b,c,d,x[i+4],7,-176418897);d=md5ff(d,a,b,c,x[i+5],12,1200080426);c=md5ff(c,d,a,b,x[i+6],17,-1473231341);b=md5ff(b,c,d,a,x[i+7],22,-45705983);
+a=md5ff(a,b,c,d,x[i+8],7,1770035416);d=md5ff(d,a,b,c,x[i+9],12,-1958414417);c=md5ff(c,d,a,b,x[i+10],17,-42063);b=md5ff(b,c,d,a,x[i+11],22,-1990404162);
+a=md5ff(a,b,c,d,x[i+12],7,1804603682);d=md5ff(d,a,b,c,x[i+13],12,-40341101);c=md5ff(c,d,a,b,x[i+14],17,-1502002290);b=md5ff(b,c,d,a,x[i+15],22,1236535329);
+a=md5gg(a,b,c,d,x[i+1],5,-165796510);d=md5gg(d,a,b,c,x[i+6],9,-1069501632);c=md5gg(c,d,a,b,x[i+11],14,643717713);b=md5gg(b,c,d,a,x[i],20,-373897302);
+a=md5gg(a,b,c,d,x[i+5],5,-701558691);d=md5gg(d,a,b,c,x[i+10],9,38016083);c=md5gg(c,d,a,b,x[i+15],14,-660478335);b=md5gg(b,c,d,a,x[i+4],20,-405537848);
+a=md5gg(a,b,c,d,x[i+9],5,568446438);d=md5gg(d,a,b,c,x[i+14],9,-1019803690);c=md5gg(c,d,a,b,x[i+3],14,-187363961);b=md5gg(b,c,d,a,x[i+8],20,1163531501);
+a=md5gg(a,b,c,d,x[i+13],5,-1444681467);d=md5gg(d,a,b,c,x[i+2],9,-51403784);c=md5gg(c,d,a,b,x[i+7],14,1735328473);b=md5gg(b,c,d,a,x[i+12],20,-1926607734);
+a=md5hh(a,b,c,d,x[i+5],4,-378558);d=md5hh(d,a,b,c,x[i+8],11,-2022574463);c=md5hh(c,d,a,b,x[i+11],16,1839030562);b=md5hh(b,c,d,a,x[i+14],23,-35309556);
+a=md5hh(a,b,c,d,x[i+1],4,-1530992060);d=md5hh(d,a,b,c,x[i+4],11,1272893353);c=md5hh(c,d,a,b,x[i+7],16,-155497632);b=md5hh(b,c,d,a,x[i+10],23,-1094730640);
+a=md5hh(a,b,c,d,x[i+13],4,681279174);d=md5hh(d,a,b,c,x[i],11,-358537222);c=md5hh(c,d,a,b,x[i+3],16,-722521979);b=md5hh(b,c,d,a,x[i+6],23,76029189);
+a=md5hh(a,b,c,d,x[i+9],4,-640364487);d=md5hh(d,a,b,c,x[i+12],11,-421815835);c=md5hh(c,d,a,b,x[i+15],16,530742520);b=md5hh(b,c,d,a,x[i+2],23,-995338651);
+a=md5ii(a,b,c,d,x[i],6,-198630844);d=md5ii(d,a,b,c,x[i+7],10,1126891415);c=md5ii(c,d,a,b,x[i+14],15,-1416354905);b=md5ii(b,c,d,a,x[i+5],21,-57434055);
+a=md5ii(a,b,c,d,x[i+12],6,1700485571);d=md5ii(d,a,b,c,x[i+3],10,-1894986606);c=md5ii(c,d,a,b,x[i+10],15,-1051523);b=md5ii(b,c,d,a,x[i+1],21,-2054922799);
+a=md5ii(a,b,c,d,x[i+8],6,1873313359);d=md5ii(d,a,b,c,x[i+15],10,-30611744);c=md5ii(c,d,a,b,x[i+6],15,-1560198380);b=md5ii(b,c,d,a,x[i+13],21,1309151649);
+a=md5ii(a,b,c,d,x[i+4],6,-145523070);d=md5ii(d,a,b,c,x[i+11],10,-1120210379);c=md5ii(c,d,a,b,x[i+2],15,718787259);b=md5ii(b,c,d,a,x[i+9],21,-343485551);
+a=safeAdd(a,oa);b=safeAdd(b,ob);c=safeAdd(c,oc);d=safeAdd(d,od)}return[a,b,c,d]}
+function binl2hex(bitarray){var hexTab='0123456789abcdef',str='';for(var i=0;i<bitarray.length*32;i+=8){str+=hexTab.charAt(bitarray[i>>5]>>>i%32&0xF)+hexTab.charAt(bitarray[i>>5]>>>i%32+4&0xF)}return str}
+function str2binl(str){var bin=[],mask=(1<<8)-1;for(var i=0;i<str.length*8;i+=8)bin[i>>5]|=(str.charCodeAt(i/8)&mask)<<i%32;return bin}
+return function(str){var utf8=unescape(encodeURIComponent(str));return binl2hex(binlMD5(str2binl(utf8),utf8.length*8))}
+}();
+
+async function hashText(){
+  var text=document.getElementById('inputText').value;
+  if(!text && currentFileData===null) return;
+  var data;
+  if(currentFileData!==null){data=currentFileData}
+  else{data=new TextEncoder().encode(text)}
+  // MD5 - text only
+  if(currentFileData===null){
+    document.getElementById('hashMD5').textContent=formatHash(MD5(text));
+  }else{
+    document.getElementById('hashMD5').textContent='(text only)';
+  }
+  // SHA via crypto
+  var uint8=new Uint8Array(data);
+  var algos=['SHA-1','SHA-256','SHA-512'];
+  for(var k=0;k<algos.length;k++){
+    var algo=algos[k];
+    var buf=await crypto.subtle.digest(algo,uint8);
+    var hex=Array.from(new Uint8Array(buf)).map(function(b){return b.toString(16).padStart(2,'0')}).join('');
+    var id='hash'+algo.replace('-','');
+    document.getElementById(id).textContent=formatHash(hex);
+  }
+}
+
+function getCase(){return document.querySelector('input[name=case]:checked').value}
+function formatHash(hash){return getCase()==='upper'?hash.toUpperCase():hash.toLowerCase()}
+
+function copyHash(id){
+  var text=document.getElementById(id).textContent;
+  if(!text||text==='—')return;
+  navigator.clipboard.writeText(text);
+  var el=document.getElementById(id);
+  var orig=el.style.color;el.style.color='#a6e3a1';
+  setTimeout(function(){el.style.color=orig},800);
+}
+
+function clearAll(){
+  document.getElementById('inputText').value='';
+  ['hashMD5','hashSHA1','hashSHA256','hashSHA512'].forEach(function(id){
+    document.getElementById(id).textContent='—';
+  });
+  currentFileData=null;
+  document.getElementById('fileName').textContent='';
+}
+
+var currentFileData=null;
+var dropZone=document.getElementById('dropZone');
+var fileInput=document.getElementById('fileInput');
+
+dropZone.addEventListener('click',function(){fileInput.click()});
+dropZone.addEventListener('dragover',function(e){e.preventDefault();dropZone.classList.add('drag-over')});
+dropZone.addEventListener('dragleave',function(){dropZone.classList.remove('drag-over')});
+dropZone.addEventListener('drop',function(e){
+  e.preventDefault();dropZone.classList.remove('drag-over');
+  if(e.dataTransfer.files.length)loadFile(e.dataTransfer.files[0]);
+});
+fileInput.addEventListener('change',function(){if(fileInput.files.length)loadFile(fileInput.files[0])});
+
+function loadFile(file){
+  document.getElementById('fileName').textContent='📄 '+file.name+' ('+formatSize(file.size)+')';
+  var reader=new FileReader();
+  reader.onload=function(e){currentFileData=e.target.result;hashText()};
+  reader.readAsArrayBuffer(file);
+}
+
+function formatSize(b){
+  if(b<1024)return b+' B';
+  if(b<1048576)return(b/1024).toFixed(1)+' KB';
+  return(b/1048576).toFixed(1)+' MB';
+}
+
+var hashTimer=null;
+document.getElementById('inputText').addEventListener('input',function(){
+  currentFileData=null;
+  document.getElementById('fileName').textContent='';
+  clearTimeout(hashTimer);
+  hashTimer=setTimeout(hashText,400);
+});
+
+document.querySelectorAll('input[name=case]').forEach(function(el){el.addEventListener('change',function(){hashText()})});
+</script>
+</body>
+</html>

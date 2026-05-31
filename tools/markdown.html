@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Markdown Previewer - DevUtils</title>
+<link rel="stylesheet" href="../css/style.css">
+<style>
+.tool-layout{display:grid;grid-template-columns:1fr 1fr;gap:1rem;height:calc(100vh - 220px);min-height:400px;max-width:1200px;margin:0 auto}
+@media(max-width:900px){.tool-layout{grid-template-columns:1fr;height:auto}}
+.panel{background:var(--bg,#fff);border:1px solid var(--border,#ddd);border-radius:10px;padding:1rem;display:flex;flex-direction:column}
+.panel-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem}
+.section-title{font-size:.9rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--primary,#4f46e5)}
+.btn{padding:.35rem .7rem;border:1px solid var(--border,#ddd);border-radius:6px;cursor:pointer;font-size:.8rem;background:var(--bg-secondary,#f5f5f5);transition:all .2s}
+.btn:hover{background:var(--primary,#4f46e5);color:#fff;border-color:var(--primary,#4f46e5)}
+#editor{flex:1;width:100%;border:1px solid var(--border,#ddd);border-radius:8px;padding:.75rem;font-family:'Courier New',monospace;font-size:.9rem;line-height:1.6;resize:none;background:var(--bg,#fff);color:var(--text,#222);tab-size:4}
+#editor:focus{outline:2px solid var(--primary,#4f46e5);outline-offset:-1px}
+#preview{flex:1;overflow-y:auto;padding:.75rem;border:1px solid var(--border,#ddd);border-radius:8px;background:var(--bg,#fff);line-height:1.7;font-size:.92rem;color:var(--text,#222)}
+#preview h1{font-size:1.8rem;border-bottom:2px solid var(--border,#ddd);padding-bottom:.3rem;margin:1rem 0 .5rem}
+#preview h2{font-size:1.4rem;border-bottom:1px solid var(--border,#eee);padding-bottom:.2rem;margin:.8rem 0 .4rem}
+#preview h3{font-size:1.15rem;margin:.7rem 0 .3rem}
+#preview h4{font-size:1rem;margin:.6rem 0 .2rem}
+#preview p{margin:.4rem 0}
+#preview a{color:var(--primary,#4f46e5)}
+#preview code{background:var(--bg-secondary,#f0f0f0);padding:.15em .35em;border-radius:3px;font-size:.85em;font-family:monospace}
+#preview pre{background:var(--bg-secondary,#f5f5f5);padding:1rem;border-radius:6px;overflow-x:auto;margin:.5rem 0}
+#preview pre code{background:none;padding:0}
+#preview blockquote{border-left:4px solid var(--primary,#4f46e5);margin:.5rem 0;padding:.5rem 1rem;background:var(--bg-secondary,#f9f9f9);border-radius:0 6px 6px 0}
+#preview ul,#preview ol{margin:.4rem 0;padding-left:1.5rem}
+#preview li{margin:.15rem 0}
+#preview table{border-collapse:collapse;width:100%;margin:.5rem 0}
+#preview th,#preview td{border:1px solid var(--border,#ddd);padding:.4rem .7rem;text-align:left}
+#preview th{background:var(--bg-secondary,#f5f5f5);font-weight:600}
+#preview hr{border:none;border-top:2px solid var(--border,#ddd);margin:1rem 0}
+#preview img{max-width:100%;border-radius:6px}
+#preview del{opacity:.7}
+</style>
+</head>
+<body>
+<nav class="navbar"><div class="navbar-inner">
+<a class="navbar-brand" href="../index.html">DevUtils</a>
+<button class="menu-toggle" onclick="document.querySelector('.navbar-links').classList.toggle('open')">☰</button>
+<ul class="navbar-links">
+  <li><a href="json-formatter.html">JSON</a></li>
+  <li><a href="base64.html">Base64</a></li>
+  <li><a href="jwt-decoder.html">JWT</a></li>
+  <li><a href="regex-tester.html">Regex</a></li>
+  <li><a href="color-picker.html">Color</a></li>
+  <li><a href="css-gradient.html">Gradient</a></li>
+  <li><a href="markdown.html">Markdown</a></li>
+  <li><a href="qr-generator.html">QR</a></li>
+  <li><a href="url-codec.html">URL</a></li>
+  <li><a href="hash-generator.html">Hash</a></li>
+  <li><a href="timestamp.html">Timestamp</a></li>
+  <li><a href="lorem-ipsum.html">Lorem</a></li>
+</ul>
+</div></nav>
+
+<main class="container">
+  <div class="tool-header">
+    <h1>Markdown Previewer</h1>
+    <p>Write Markdown on the left, see live HTML preview on the right.</p>
+  </div>
+  <div class="tool-layout">
+    <div class="panel">
+      <div class="panel-header">
+        <span class="section-title">Markdown Editor</span>
+      </div>
+      <textarea id="editor" spellcheck="false"></textarea>
+    </div>
+    <div class="panel">
+      <div class="panel-header">
+        <span class="section-title">Preview</span>
+        <button class="btn" onclick="copyHTML()">Copy HTML</button>
+      </div>
+      <div id="preview"></div>
+    </div>
+  </div>
+</main>
+
+<footer class="footer"><p>DevUtils - Free developer tools in your browser.</p></footer>
+
+<script>
+var editor=document.getElementById('editor');
+var preview=document.getElementById('preview');
+
+var defaultContent='# Markdown Previewer\n\nWelcome to the **Markdown Previewer**! This tool supports all common Markdown syntax.\n\n## Text Formatting\n\nYou can write **bold text**, *italic text*, and ~~strikethrough text~~.\n\nYou can also combine ***bold and italic*** together.\n\n## Links and Images\n\nVisit [DevUtils](https://example.com) for more tools.\n\n![Example Image](https://via.placeholder.com/150)\n\n## Code\n\nInline `code` is supported, as well as code blocks:\n\n```javascript\nfunction hello(name) {\n  console.log("Hello, " + name + "!");\n}\nhello("World");\n```\n\n## Lists\n\n### Unordered List\n- First item\n- Second item\n  - Nested item\n  - Another nested item\n- Third item\n\n### Ordered List\n1. Step one\n2. Step two\n3. Step three\n\n## Blockquotes\n\n> This is a blockquote.\n> It can span multiple lines.\n>\n> And even have **formatted** text.\n\n## Table\n\n| Feature     | Supported | Notes        |\n|-------------|-----------|--------------|\n| Headers     | Yes       | h1 through h4|\n| Bold        | Yes       | **text**     |\n| Italic      | Yes       | *text*       |\n| Code blocks | Yes       | With syntax  |\n| Tables      | Yes       | Like this    |\n\n## Horizontal Rule\n\n---\n\n## Header Levels\n\n### Header 3\n#### Header 4\n\nThat is all! Start editing to see the live preview.';
+
+function escapeHtml(str){
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function parseMarkdown(md){
+  var html=md;
+
+  // Code blocks (fenced) - protect first
+  var codeBlocks=[];
+  html=html.replace(/```(\w*)\n([\s\S]*?)```/g,function(m,lang,code){
+    var idx=codeBlocks.length;
+    codeBlocks.push('<pre><code class="lang-'+(lang||'text')+'">'+escapeHtml(code.trimEnd())+'</code></pre>');
+    return '%%CODEBLOCK'+idx+'%%';
+  });
+
+  // Inline code - protect
+  var inlineCodes=[];
+  html=html.replace(/`([^`]+)`/g,function(m,code){
+    var idx=inlineCodes.length;
+    inlineCodes.push('<code>'+escapeHtml(code)+'</code>');
+    return '%%INLINECODE'+idx+'%%';
+  });
+
+  // Tables
+  html=html.replace(/^(\|.+\|)\n(\|[-| :]+\|)\n((?:\|.+\|\n?)*)/gm,function(m,headerRow,sepRow,bodyRows){
+    var headers=headerRow.split('|').filter(function(c){return c.trim()!=='';}).map(function(c){return '<th>'+c.trim()+'</th>';}).join('');
+    var aligns=sepRow.split('|').filter(function(c){return c.trim()!=='';}).map(function(c){
+      c=c.trim();
+      if(c.startsWith(':')&&c.endsWith(':')) return 'center';
+      if(c.endsWith(':')) return 'right';
+      return 'left';
+    });
+    var rows=bodyRows.trim().split('\n').filter(function(r){return r.trim()!=='';});
+    var body='';
+    rows.forEach(function(row){
+      var cells=row.split('|').filter(function(c){return c.trim()!=='';});
+      body+='<tr>';
+      cells.forEach(function(cell,i){
+        var align=aligns[i]||'left';
+        body+='<td style="text-align:'+align+'">'+cell.trim()+'</td>';
+      });
+      body+='</tr>';
+    });
+    return '<table><thead><tr>'+headers+'</tr></thead><tbody>'+body+'</tbody></table>';
+  });
+
+  // Process line by line for block elements
+  var lines=html.split('\n');
+  var result=[];
+  var inList=false;
+  var listType='';
+  var inBlockquote=false;
+
+  for(var i=0;i<lines.length;i++){
+    var line=lines[i];
+
+    // Skip if it's a code block placeholder
+    if(line.indexOf('%%CODEBLOCK')!==-1){
+      if(inList){result.push(listType==='ul'?'</ul>':'</ol>');inList=false;}
+      if(inBlockquote){result.push('</blockquote>');inBlockquote=false;}
+      result.push(line);
+      continue;
+    }
+
+    // Horizontal rule
+    if(/^(-{3,}|\*{3,}|_{3,})$/.test(line.trim())){
+      if(inList){result.push(listType==='ul'?'</ul>':'</ol>');inList=false;}
+      if(inBlockquote){result.push('</blockquote>');inBlockquote=false;}
+      result.push('<hr>');
+      continue;
+    }
+
+    // Headers
+    var headerMatch=line.match(/^(#{1,4})\s+(.+)/);
+    if(headerMatch){
+      if(inList){result.push(listType==='ul'?'</ul>':'</ol>');inList=false;}
+      if(inBlockquote){result.push('</blockquote>');inBlockquote=false;}
+      var level=headerMatch[1].length;
+      result.push('<h'+level+'>'+inlineFormat(headerMatch[2])+'</h'+level+'>');
+      continue;
+    }
+
+    // Blockquote
+    var bqMatch=line.match(/^>\s?(.*)/);
+    if(bqMatch){
+      if(inList){result.push(listType==='ul'?'</ul>':'</ol>');inList=false;}
+      if(!inBlockquote){result.push('<blockquote>');inBlockquote=true;}
+      result.push('<p>'+inlineFormat(bqMatch[1])+'</p>');
+      continue;
+    }else if(inBlockquote){
+      result.push('</blockquote>');inBlockquote=false;
+    }
+
+    // Unordered list
+    var ulMatch=line.match(/^[-*+]\s+(.+)/);
+    if(ulMatch){
+      if(inList&&listType!=='ul'){result.push('</ol>');inList=false;}
+      if(!inList){result.push('<ul>');inList=true;listType='ul';}
+      result.push('<li>'+inlineFormat(ulMatch[1])+'</li>');
+      continue;
+    }
+
+    // Ordered list
+    var olMatch=line.match(/^\d+\.\s+(.+)/);
+    if(olMatch){
+      if(inList&&listType!=='ol'){result.push('</ul>');inList=false;}
+      if(!inList){result.push('<ol>');inList=true;listType='ol';}
+      result.push('<li>'+inlineFormat(olMatch[1])+'</li>');
+      continue;
+    }
+
+    // Close list if not a list item
+    if(inList){result.push(listType==='ul'?'</ul>':'</ol>');inList=false;}
+    if(inBlockquote){result.push('</blockquote>');inBlockquote=false;}
+
+    // Empty line
+    if(line.trim()===''){
+      result.push('');
+      continue;
+    }
+
+    // Table pass-through (already processed above)
+    if(line.trim().startsWith('<table')||line.trim().startsWith('</table')){
+      result.push(line);
+      continue;
+    }
+
+    // Paragraph
+    result.push('<p>'+inlineFormat(line)+'</p>');
+  }
+
+  if(inList) result.push(listType==='ul'?'</ul>':'</ol>');
+  if(inBlockquote) result.push('</blockquote>');
+
+  html=result.join('\n');
+
+  // Restore code blocks
+  html=html.replace(/%%CODEBLOCK(\d+)%%/g,function(m,idx){return codeBlocks[parseInt(idx)];});
+  // Restore inline code
+  html=html.replace(/%%INLINECODE(\d+)%%/g,function(m,idx){return inlineCodes[parseInt(idx)];});
+
+  // Clean up empty paragraphs
+  html=html.replace(/<p>\s*<\/p>/g,'');
+
+  return html;
+}
+
+function inlineFormat(text){
+  // Images before links
+  text=text.replace(/!\[([^\]]*)\]\(([^)]+)\)/g,'<img src="$2" alt="$1">');
+  // Links
+  text=text.replace(/\[([^\]]+)\]\(([^)]+)\)/g,'<a href="$2" target="_blank">$1</a>');
+  // Bold+Italic
+  text=text.replace(/\*\*\*(.+?)\*\*\*/g,'<strong><em>$1</em></strong>');
+  // Bold
+  text=text.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');
+  text=text.replace(/__(.+?)__/g,'<strong>$1</strong>');
+  // Italic
+  text=text.replace(/\*(.+?)\*/g,'<em>$1</em>');
+  text=text.replace(/_(.+?)_/g,'<em>$1</em>');
+  // Strikethrough
+  text=text.replace(/~~(.+?)~~/g,'<del>$1</del>');
+  return text;
+}
+
+function renderPreview(){
+  preview.innerHTML=parseMarkdown(editor.value);
+}
+
+editor.addEventListener('input',renderPreview);
+
+// Tab key inserts spaces
+editor.addEventListener('keydown',function(e){
+  if(e.key==='Tab'){
+    e.preventDefault();
+    var start=this.selectionStart;
+    var end=this.selectionEnd;
+    this.value=this.value.substring(0,start)+'    '+this.value.substring(end);
+    this.selectionStart=this.selectionEnd=start+4;
+    renderPreview();
+  }
+});
+
+function copyHTML(){
+  navigator.clipboard.writeText(preview.innerHTML).then(function(){
+    var btn=document.querySelector('.panel-header .btn');
+    var o=btn.textContent;btn.textContent='Copied!';setTimeout(function(){btn.textContent=o;},1200);
+  });
+}
+
+editor.value=defaultContent;
+renderPreview();
+</script>
+</body>
+</html>

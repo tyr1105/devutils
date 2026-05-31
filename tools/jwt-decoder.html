@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JWT Decoder - DevUtils</title>
+<link rel="stylesheet" href="../css/style.css">
+<style>
+  .tool-header{background:linear-gradient(135deg,#11998e 0%,#38ef7d 100%);color:#fff;padding:2rem 1rem;text-align:center}
+  .tool-header h1{margin:0;font-size:1.8rem}
+  .tool-header p{margin:.5rem 0 0;opacity:.9}
+  .tool-area{max-width:1000px;margin:1.5rem auto;padding:0 1rem}
+  .jwt-input-wrap{background:#fff;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,.08);padding:1rem;margin-bottom:1.5rem}
+  .jwt-input-wrap h2{margin:0 0 .5rem;font-size:1.1rem;color:#333}
+  .jwt-input-wrap textarea{width:100%;min-height:100px;font-family:'Fira Code',monospace,Consolas;font-size:.85rem;border:1px solid #ddd;border-radius:6px;padding:.75rem;resize:vertical;background:#fafafa;color:#333;box-sizing:border-box}
+  .jwt-input-wrap textarea:focus{outline:none;border-color:#11998e;box-shadow:0 0 0 3px rgba(17,153,142,.15)}
+  .btn-row{display:flex;flex-wrap:wrap;gap:.5rem;margin:.75rem 0}
+  .btn{padding:.5rem 1rem;border:none;border-radius:6px;cursor:pointer;font-size:.85rem;font-weight:600;transition:all .2s}
+  .btn:hover{transform:translateY(-1px);box-shadow:0 2px 6px rgba(0,0,0,.15)}
+  .btn:active{transform:translateY(0)}
+  .btn-primary{background:#11998e;color:#fff}
+  .btn-secondary{background:#6c757d;color:#fff}
+  .btn-danger{background:#dc3545;color:#fff}
+  .status-bar{display:flex;flex-wrap:wrap;gap:1rem;align-items:center;margin-bottom:1rem}
+  .badge{display:inline-block;padding:.35rem .75rem;border-radius:20px;font-size:.8rem;font-weight:600}
+  .badge-valid{background:#d4edda;color:#155724}
+  .badge-expired{background:#f8d7da;color:#721c24}
+  .badge-nodate{background:#e2e3e5;color:#6c757d}
+  .time-info{font-size:.85rem;color:#555}
+  .sections{display:flex;flex-direction:column;gap:1rem}
+  .section{border-radius:8px;padding:1rem;position:relative}
+  .section-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem}
+  .section h3{margin:0;font-size:1rem}
+  .section-header .copy-btn{padding:.3rem .6rem;font-size:.75rem;border:none;border-radius:4px;cursor:pointer;background:rgba(255,255,255,.3);color:#fff;font-weight:600}
+  .section-header .copy-btn:hover{background:rgba(255,255,255,.5)}
+  .section-body{font-family:'Fira Code',monospace,Consolas;font-size:.82rem;white-space:pre-wrap;word-break:break-all;line-height:1.5;color:#f0f0f0}
+  .section-header-color{background:rgba(0,0,0,.1);padding:.3rem .6rem;border-radius:4px;font-size:.7rem}
+  .section-header-color .dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:.3rem}
+  .section-header-color .dot.red{background:#e74c3c}
+  .section-header-color .dot.purple{background:#9b59b6}
+  .section-header-color .dot.blue{background:#3498db}
+  .sec-header{background:linear-gradient(135deg,#e74c3c,#c0392b)}
+  .sec-payload{background:linear-gradient(135deg,#9b59b6,#8e44ad)}
+  .sec-signature{background:linear-gradient(135deg,#3498db,#2980b9)}
+  .error-msg{background:#f8d7da;color:#721c24;border:1px solid #f5c6cb;border-radius:6px;padding:.75rem;margin-top:.5rem;font-family:monospace;white-space:pre-wrap;display:none}
+  .json-key{color:#89b4fa}
+  .json-string{color:#a6e3a1}
+  .json-number{color:#fab387}
+  .json-bool,.json-null{color:#cba6f7}
+  footer{text-align:center;padding:2rem 1rem;color:#888;font-size:.85rem}
+</style>
+</head>
+<body>
+<nav class="navbar"><div class="navbar-inner">
+<a class="navbar-brand" href="../index.html">⚡ DevUtils</a>
+<button class="menu-toggle" onclick="document.querySelector('.navbar-links').classList.toggle('open')">☰</button>
+<ul class="navbar-links">
+  <li><a href="json-formatter.html">JSON</a></li>
+  <li><a href="base64.html">Base64</a></li>
+  <li><a href="jwt-decoder.html">JWT</a></li>
+  <li><a href="regex-tester.html">Regex</a></li>
+  <li><a href="color-picker.html">Color</a></li>
+  <li><a href="css-gradient.html">Gradient</a></li>
+  <li><a href="markdown.html">Markdown</a></li>
+  <li><a href="qr-generator.html">QR</a></li>
+  <li><a href="url-codec.html">URL</a></li>
+  <li><a href="hash-generator.html">Hash</a></li>
+  <li><a href="timestamp.html">Timestamp</a></li>
+  <li><a href="lorem-ipsum.html">Lorem</a></li>
+</ul>
+</div></nav>
+
+<div class="tool-header">
+  <h1>🔑 JWT Decoder</h1>
+  <p>Decode and inspect JSON Web Tokens instantly</p>
+</div>
+
+<div class="tool-area">
+  <div class="jwt-input-wrap">
+    <h2>Paste JWT Token</h2>
+    <textarea id="jwtInput" placeholder="Paste your JWT token here (e.g., eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c)"></textarea>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="decodeJWT()">Decode</button>
+      <button class="btn btn-secondary" onclick="copyAll()">📋 Copy All Sections</button>
+      <button class="btn btn-danger" onclick="clearAll()">Clear</button>
+    </div>
+  </div>
+
+  <div id="statusBar" class="status-bar" style="display:none"></div>
+  <div id="errorMsg" class="error-msg"></div>
+
+  <div id="sections" class="sections" style="display:none">
+    <div class="section sec-header">
+      <div class="section-header">
+        <h3>📋 Header <span class="section-header-color"><span class="dot red"></span>RED</span></h3>
+        <button class="copy-btn" onclick="copySection('header')">📋 Copy</button>
+      </div>
+      <div id="headerBody" class="section-body"></div>
+    </div>
+    <div class="section sec-payload">
+      <div class="section-header">
+        <h3>📦 Payload <span class="section-header-color"><span class="dot purple"></span>PURPLE</span></h3>
+        <button class="copy-btn" onclick="copySection('payload')">📋 Copy</button>
+      </div>
+      <div id="payloadBody" class="section-body"></div>
+    </div>
+    <div class="section sec-signature">
+      <div class="section-header">
+        <h3>🔏 Signature <span class="section-header-color"><span class="dot blue"></span>BLUE</span></h3>
+        <button class="copy-btn" onclick="copySection('signature')">📋 Copy</button>
+      </div>
+      <div id="signatureBody" class="section-body"></div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <p>JWT Decoder — Part of <a href="../index.html">DevUtils</a> toolkit</p>
+</footer>
+
+<script>
+const jwtInput = document.getElementById('jwtInput');
+const sectionsEl = document.getElementById('sections');
+const statusBar = document.getElementById('statusBar');
+const errorEl = document.getElementById('errorMsg');
+let decodedHeader = '';
+let decodedPayload = '';
+let decodedSignature = '';
+
+function b64UrlDecode(str) {
+  // Replace URL-safe chars and add padding
+  str = str.replace(/-/g, '+').replace(/_/g, '/');
+  while (str.length % 4) str += '=';
+  const binary = atob(str);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  return new TextDecoder().decode(bytes);
+}
+
+function b64UrlToHex(str) {
+  str = str.replace(/-/g, '+').replace(/_/g, '/');
+  while (str.length % 4) str += '=';
+  const binary = atob(str);
+  let hex = '';
+  for (let i = 0; i < binary.length; i++) {
+    hex += ('0' + binary.charCodeAt(i).toString(16)).slice(-2);
+  }
+  return hex;
+}
+
+function syntaxHighlight(json) {
+  json = json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  return json.replace(
+    /("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g,
+    function(match) {
+      let cls = 'json-number';
+      if (/^"/.test(match)) {
+        cls = /:$/.test(match) ? 'json-key' : 'json-string';
+      } else if (/true|false/.test(match)) {
+        cls = 'json-bool';
+      } else if (/null/.test(match)) {
+        cls = 'json-null';
+      }
+      return '<span class="' + cls + '">' + match + '</span>';
+    }
+  );
+}
+
+function formatEpoch(epoch) {
+  if (!epoch || isNaN(epoch)) return null;
+  const d = new Date(epoch * 1000);
+  if (isNaN(d.getTime())) return null;
+  return d.toLocaleString();
+}
+
+function hideError() { errorEl.style.display = 'none'; }
+function showError(msg) {
+  errorEl.textContent = msg;
+  errorEl.style.display = 'block';
+}
+
+function decodeJWT() {
+  hideError();
+  sectionsEl.style.display = 'none';
+  statusBar.style.display = 'none';
+  statusBar.innerHTML = '';
+
+  const raw = jwtInput.value.trim();
+  if (!raw) { showError('Please paste a JWT token.'); return; }
+
+  const parts = raw.split('.');
+  if (parts.length !== 3) {
+    showError('Invalid JWT: A JWT must have exactly 3 parts separated by dots (header.payload.signature).\nFound ' + parts.length + ' part(s).');
+    return;
+  }
+
+  try {
+    decodedHeader = b64UrlDecode(parts[0]);
+    JSON.parse(decodedHeader); // Validate it's JSON
+  } catch (e) {
+    showError('Failed to decode header: ' + e.message);
+    return;
+  }
+
+  try {
+    decodedPayload = b64UrlDecode(parts[1]);
+    JSON.parse(decodedPayload); // Validate
+  } catch (e) {
+    showError('Failed to decode payload: ' + e.message);
+    return;
+  }
+
+  try {
+    decodedSignature = b64UrlToHex(parts[2]);
+  } catch (e) {
+    decodedSignature = '(unable to decode signature)';
+  }
+
+  // Display
+  document.getElementById('headerBody').innerHTML = syntaxHighlight(JSON.stringify(JSON.parse(decodedHeader), null, 2));
+  document.getElementById('payloadBody').innerHTML = syntaxHighlight(JSON.stringify(JSON.parse(decodedPayload), null, 2));
+  document.getElementById('signatureBody').textContent = decodedSignature;
+  sectionsEl.style.display = 'flex';
+
+  // Status bar — check exp and iat
+  try {
+    const payload = JSON.parse(decodedPayload);
+    let statusHTML = '';
+    if (payload.exp) {
+      const expDate = formatEpoch(payload.exp);
+      const now = Math.floor(Date.now() / 1000);
+      if (payload.exp < now) {
+        statusHTML += '<span class="badge badge-expired">⏰ Expired</span>';
+      } else {
+        statusHTML += '<span class="badge badge-valid">✅ Valid (not expired)</span>';
+      }
+      statusHTML += '<span class="time-info">Expiration: ' + (expDate || 'N/A') + '</span>';
+    } else {
+      statusHTML += '<span class="badge badge-nodate">ℹ️ No expiration set</span>';
+    }
+    if (payload.iat) {
+      const iatDate = formatEpoch(payload.iat);
+      statusHTML += '<span class="time-info">Issued: ' + (iatDate || 'N/A') + '</span>';
+    }
+    if (payload.nbf) {
+      const nbfDate = formatEpoch(payload.nbf);
+      statusHTML += '<span class="time-info">Not before: ' + (nbfDate || 'N/A') + '</span>';
+    }
+    if (statusHTML) {
+      statusBar.innerHTML = statusHTML;
+      statusBar.style.display = 'flex';
+    }
+  } catch (e) {}
+}
+
+function copySection(type) {
+  let text = '';
+  if (type === 'header') text = decodedHeader;
+  else if (type === 'payload') text = decodedPayload;
+  else if (type === 'signature') text = decodedSignature;
+  if (!text) return;
+  navigator.clipboard.writeText(text).then(() => {
+    // Brief visual feedback
+  });
+}
+
+function copyAll() {
+  const all = '=== HEADER ===\n' + decodedHeader + '\n\n=== PAYLOAD ===\n' + decodedPayload + '\n\n=== SIGNATURE ===\n' + decodedSignature;
+  if (!decodedHeader && !decodedPayload) return;
+  navigator.clipboard.writeText(all);
+}
+
+function clearAll() {
+  jwtInput.value = '';
+  sectionsEl.style.display = 'none';
+  statusBar.style.display = 'none';
+  hideError();
+  decodedHeader = '';
+  decodedPayload = '';
+  decodedSignature = '';
+}
+
+// Auto-decode on paste
+jwtInput.addEventListener('paste', function() {
+  setTimeout(decodeJWT, 50);
+});
+</script>
+</body>
+</html>

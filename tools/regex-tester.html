@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Regex Tester - DevUtils</title>
+<link rel="stylesheet" href="../css/style.css">
+<style>
+  .tool-header{background:linear-gradient(135deg,#fc5c7d 0%,#6a82fb 100%);color:#fff;padding:2rem 1rem;text-align:center}
+  .tool-header h1{margin:0;font-size:1.8rem}
+  .tool-header p{margin:.5rem 0 0;opacity:.9}
+  .tool-area{max-width:1100px;margin:1.5rem auto;padding:0 1rem}
+  .regex-controls{background:#fff;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,.08);padding:1rem;margin-bottom:1rem;display:flex;flex-wrap:wrap;gap:.75rem;align-items:center}
+  .regex-controls label{font-weight:600;font-size:.85rem;color:#555}
+  .regex-controls input[type="text"]{padding:.5rem .75rem;border:1px solid #ddd;border-radius:6px;font-family:'Fira Code',monospace,Consolas;font-size:.85rem;color:#333}
+  .regex-controls input[type="text"]:focus{outline:none;border-color:#6a82fb;box-shadow:0 0 0 3px rgba(106,130,251,.15)}
+  #regexPattern{flex:1;min-width:200px}
+  #regexFlags{width:80px;text-align:center}
+  .regex-controls select{padding:.5rem .75rem;border:1px solid #ddd;border-radius:6px;font-size:.85rem;color:#333;background:#fff;cursor:pointer}
+  .panels{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem}
+  @media(max-width:768px){.panels{grid-template-columns:1fr}}
+  .panel{background:#fff;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,.08);padding:1rem;display:flex;flex-direction:column}
+  .panel h2{margin:0 0 .75rem;font-size:1.1rem;color:#333;border-bottom:2px solid #eee;padding-bottom:.5rem}
+  textarea{width:100%;min-height:200px;font-family:'Fira Code',monospace,Consolas;font-size:.85rem;border:1px solid #ddd;border-radius:6px;padding:.75rem;resize:vertical;background:#fafafa;color:#333;box-sizing:border-box}
+  textarea:focus{outline:none;border-color:#6a82fb;box-shadow:0 0 0 3px rgba(106,130,251,.15)}
+  .output-area{min-height:200px;background:#1e1e2e;border-radius:6px;padding:.75rem;font-family:'Fira Code',monospace,Consolas;font-size:.85rem;overflow:auto;color:#cdd6f4;white-space:pre-wrap;word-break:break-word;line-height:1.6}
+  .match-count{background:#e8f4fd;color:#0c5460;border:1px solid #bee5eb;border-radius:6px;padding:.5rem .75rem;margin:.75rem 0;font-size:.85rem;font-weight:600}
+  .match-count strong{color:#6a82fb;font-size:1.1rem}
+  .highlight{background:#6a82fb;color:#fff;border-radius:3px;padding:0 2px}
+  .group1{background:#e74c3c;color:#fff;border-radius:3px;padding:0 2px}
+  .groups-table{width:100%;border-collapse:collapse;margin-top:.75rem;font-size:.82rem}
+  .groups-table th{background:#f8f9fa;text-align:left;padding:.5rem;border:1px solid #dee2e6;font-weight:600;color:#555}
+  .groups-table td{padding:.5rem;border:1px solid #dee2e6;font-family:'Fira Code',monospace,Consolas;word-break:break-all}
+  .groups-table tr:nth-child(even){background:#f8f9fa}
+  .error-msg{background:#f8d7da;color:#721c24;border:1px solid #f5c6cb;border-radius:6px;padding:.75rem;margin-top:.5rem;font-family:monospace;white-space:pre-wrap;display:none}
+  .groups-section{background:#fff;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,.08);padding:1rem;margin-top:1rem}
+  .groups-section h2{margin:0 0 .5rem;font-size:1.1rem;color:#333}
+  footer{text-align:center;padding:2rem 1rem;color:#888;font-size:.85rem}
+</style>
+</head>
+<body>
+<nav class="navbar"><div class="navbar-inner">
+<a class="navbar-brand" href="../index.html">⚡ DevUtils</a>
+<button class="menu-toggle" onclick="document.querySelector('.navbar-links').classList.toggle('open')">☰</button>
+<ul class="navbar-links">
+  <li><a href="json-formatter.html">JSON</a></li>
+  <li><a href="base64.html">Base64</a></li>
+  <li><a href="jwt-decoder.html">JWT</a></li>
+  <li><a href="regex-tester.html">Regex</a></li>
+  <li><a href="color-picker.html">Color</a></li>
+  <li><a href="css-gradient.html">Gradient</a></li>
+  <li><a href="markdown.html">Markdown</a></li>
+  <li><a href="qr-generator.html">QR</a></li>
+  <li><a href="url-codec.html">URL</a></li>
+  <li><a href="hash-generator.html">Hash</a></li>
+  <li><a href="timestamp.html">Timestamp</a></li>
+  <li><a href="lorem-ipsum.html">Lorem</a></li>
+</ul>
+</div></nav>
+
+<div class="tool-header">
+  <h1>🔍 Regex Tester</h1>
+  <p>Test regular expressions in real-time with match highlighting and group capture</p>
+</div>
+
+<div class="tool-area">
+  <div class="regex-controls">
+    <label for="regexPattern">Pattern:</label>
+    <input type="text" id="regexPattern" placeholder="Enter regex pattern (e.g., \d+)" oninput="runRegex()">
+    <label for="regexFlags">Flags:</label>
+    <input type="text" id="regexFlags" value="g" placeholder="gim" oninput="runRegex()">
+    <label>Presets:</label>
+    <select id="presetSelect" onchange="applyPreset()">
+      <option value="">-- Common patterns --</option>
+      <option value="email">Email</option>
+      <option value="url">URL</option>
+      <option value="phone">Phone (US)</option>
+      <option value="ip">IPv4 Address</option>
+      <option value="ipv6">IPv6 Address</option>
+      <option value="date">Date (YYYY-MM-DD)</option>
+      <option value="hex">Hex Color</option>
+      <option value="number">Decimal Number</option>
+      <option value="tag">HTML Tag</option>
+      <option value="creditcard">Credit Card</option>
+      <option value="username">Username (alphanumeric)</option>
+      <option value="password">Password (8+, upper+lower+digit+special)</option>
+    </select>
+  </div>
+
+  <div class="panels">
+    <div class="panel">
+      <h2>📝 Test String</h2>
+      <textarea id="testString" placeholder="Enter your test string here..." oninput="runRegex()">The quick brown fox jumps over the lazy dog.
+Contact us at test@example.com or visit https://www.example.com/page?id=42
+Phone: (555) 123-4567 or 555.987.6543
+IP addresses: 192.168.1.1 and 10.0.0.255
+Colors: #ff6600, #00ff00, #abcdef
+Numbers: 42, 3.14159, -17, 1000
+Date: 2024-01-15</textarea>
+    </div>
+    <div class="panel">
+      <h2>🎯 Match Result</h2>
+      <div id="matchCount" class="match-count" style="display:none"></div>
+      <div id="matchOutput" class="output-area">Matches will appear here...</div>
+    </div>
+  </div>
+
+  <div id="groupsSection" class="groups-section" style="display:none">
+    <h2>📊 Capture Groups</h2>
+    <table class="groups-table" id="groupsTable">
+      <thead>
+        <tr><th>Match #</th><th>Full Match</th><th>Groups</th><th>Index</th></tr>
+      </thead>
+      <tbody id="groupsBody"></tbody>
+    </table>
+  </div>
+
+  <div id="errorMsg" class="error-msg"></div>
+</div>
+
+<footer>
+  <p>Regex Tester — Part of <a href="../index.html">DevUtils</a> toolkit</p>
+</footer>
+
+<script>
+const patternEl = document.getElementById('regexPattern');
+const flagsEl = document.getElementById('regexFlags');
+const testEl = document.getElementById('testString');
+const matchOutput = document.getElementById('matchOutput');
+const matchCountEl = document.getElementById('matchCount');
+const groupsSection = document.getElementById('groupsSection');
+const groupsBody = document.getElementById('groupsBody');
+const errorEl = document.getElementById('errorMsg');
+
+const presets = {
+  email: { pattern: '[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}', flags: 'gi' },
+  url: { pattern: 'https?:\\/\\/[\\w\\-]+(\\.[\\w\\-]+)+[\\/\\w\\-._~:?#@!$&\'()*+,;=%]*', flags: 'gi' },
+  phone: { pattern: '(?:\\(\\d{3}\\)|\\d{3})[-.\\s]?\\d{3}[-.\\s]?\\d{4}', flags: 'g' },
+  ip: { pattern: '\\b(?:(?:25[0-5]|2[0-4]\\d|[01]?\\d\\d?)\\.){3}(?:25[0-5]|2[0-4]\\d|[01]?\\d\\d?)\\b', flags: 'g' },
+  ipv6: { pattern: '(?:[0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}', flags: 'g' },
+  date: { pattern: '\\d{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12]\\d|3[01])', flags: 'g' },
+  hex: { pattern: '#(?:[0-9a-fA-F]{3}){1,2}\\b', flags: 'gi' },
+  number: { pattern: '-?\\d+(?:\\.\\d+)?', flags: 'g' },
+  tag: { pattern: '<\\/?[a-zA-Z][\\w\\-]*(?:\\s[^>]*)?>', flags: 'g' },
+  creditcard: { pattern: '\\b(?:\\d[ -]*?){13,19}\\b', flags: 'g' },
+  username: { pattern: '^[a-zA-Z0-9_]{3,20}$', flags: 'gm' },
+  password: { pattern: '(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[!@#$%^&*]).{8,}', flags: '' }
+};
+
+function applyPreset() {
+  const sel = document.getElementById('presetSelect').value;
+  if (!sel) return;
+  const p = presets[sel];
+  patternEl.value = p.pattern;
+  flagsEl.value = p.flags;
+  runRegex();
+}
+
+function hideError() { errorEl.style.display = 'none'; }
+function showError(msg) {
+  errorEl.textContent = msg;
+  errorEl.style.display = 'block';
+}
+
+function escapeHtml(str) {
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+function runRegex() {
+  hideError();
+  const pattern = patternEl.value;
+  const flags = flagsEl.value;
+  const testStr = testEl.value;
+
+  if (!pattern) {
+    matchOutput.innerHTML = '<span style="color:#6c757d">Enter a regex pattern to see matches...</span>';
+    matchCountEl.style.display = 'none';
+    groupsSection.style.display = 'none';
+    return;
+  }
+
+  if (!testStr) {
+    matchOutput.innerHTML = '<span style="color:#6c757d">Enter a test string...</span>';
+    matchCountEl.style.display = 'none';
+    groupsSection.style.display = 'none';
+    return;
+  }
+
+  let regex;
+  try {
+    regex = new RegExp(pattern, flags);
+  } catch (e) {
+    showError('Invalid regex: ' + e.message);
+    matchOutput.innerHTML = '<span style="color:#f38ba8">⚠ Invalid regular expression</span>';
+    matchCountEl.style.display = 'none';
+    groupsSection.style.display = 'none';
+    return;
+  }
+
+  // Collect all matches
+  const matches = [];
+  if (flags.includes('g')) {
+    let m;
+    // Use a copy to avoid infinite loops with zero-length matches
+    let lastIndex = -1;
+    const re = new RegExp(pattern, flags);
+    while ((m = re.exec(testStr)) !== null) {
+      if (m.index === lastIndex) {
+        re.lastIndex++;
+        lastIndex = -2; // prevent double skip
+      }
+      lastIndex = m.index;
+      matches.push({ match: m[0], index: m.index, groups: Array.from(m).slice(1) });
+      if (m[0].length === 0) re.lastIndex++;
+    }
+  } else {
+    const m = regex.exec(testStr);
+    if (m) {
+      matches.push({ match: m[0], index: m.index, groups: Array.from(m).slice(1) });
+    }
+  }
+
+  if (matches.length === 0) {
+    matchOutput.innerHTML = '<span style="color:#6c757d">No matches found.</span>';
+    matchCountEl.style.display = 'none';
+    groupsSection.style.display = 'none';
+    return;
+  }
+
+  // Build highlighted output
+  let html = '';
+  let lastEnd = 0;
+  // Sort by index
+  matches.sort((a, b) => a.index - b.index);
+  for (let i = 0; i < matches.length; i++) {
+    const m = matches[i];
+    if (m.index < lastEnd) continue; // skip overlapping
+    html += escapeHtml(testStr.substring(lastEnd, m.index));
+    html += '<span class="highlight">' + escapeHtml(m.match) + '</span>';
+    lastEnd = m.index + m.match.length;
+  }
+  html += escapeHtml(testStr.substring(lastEnd));
+  matchOutput.innerHTML = html;
+
+  // Match count
+  matchCountEl.innerHTML = '✅ Found <strong>' + matches.length + '</strong> match' + (matches.length !== 1 ? 'es' : '');
+  matchCountEl.style.display = 'block';
+
+  // Groups table
+  const hasGroups = matches.some(m => m.groups.length > 0);
+  if (hasGroups) {
+    let tbody = '';
+    for (let i = 0; i < matches.length; i++) {
+      const m = matches[i];
+      const groupStr = m.groups.map((g, gi) => '<span style="color:#6c757d">Group ' + (gi + 1) + ':</span> ' + escapeHtml(g || '(empty)')).join('<br>');
+      tbody += '<tr><td>' + (i + 1) + '</td><td>' + escapeHtml(m.match) + '</td><td>' + groupStr + '</td><td>' + m.index + '</td></tr>';
+    }
+    groupsBody.innerHTML = tbody;
+    groupsSection.style.display = 'block';
+  } else {
+    groupsSection.style.display = 'none';
+  }
+}
+
+// Initial run
+runRegex();
+</script>
+</body>
+</html>

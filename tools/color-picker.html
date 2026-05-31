@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Color Picker - DevUtils</title>
+<link rel="stylesheet" href="../css/style.css">
+<style>
+.tool-layout{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;max-width:1000px;margin:0 auto}
+@media(max-width:768px){.tool-layout{grid-template-columns:1fr}}
+.color-preview{width:100%;height:120px;border-radius:8px;border:2px solid var(--border,#ddd);margin-bottom:1rem;box-shadow:0 2px 8px rgba(0,0,0,.1)}
+.native-picker{width:100%;height:50px;border:none;cursor:pointer;border-radius:6px;padding:0;background:none}
+.native-picker::-webkit-color-swatch-wrapper{padding:0}
+.native-picker::-webkit-color-swatch{border:2px solid var(--border,#ddd);border-radius:6px}
+.input-group{margin-bottom:.75rem}
+.input-group label{display:block;font-weight:600;margin-bottom:.25rem;font-size:.85rem;color:var(--text-secondary,#666)}
+.input-row{display:flex;gap:.5rem;align-items:center}
+.input-row input{flex:1;padding:.5rem;border:1px solid var(--border,#ddd);border-radius:6px;font-family:monospace;font-size:.9rem;background:var(--bg,#fff);color:var(--text,#222)}
+.copy-btn{padding:.45rem .7rem;border:1px solid var(--border,#ddd);border-radius:6px;background:var(--bg-secondary,#f5f5f5);cursor:pointer;font-size:.8rem;white-space:nowrap;transition:all .2s}
+.copy-btn:hover{background:var(--primary,#4f46e5);color:#fff;border-color:var(--primary,#4f46e5)}
+.palette-section h3{font-size:1rem;margin-bottom:.75rem}
+.palette-row{display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:1rem;align-items:flex-start}
+.palette-row .plabel{font-size:.75rem;font-weight:600;width:100%;margin-bottom:.25rem}
+.swatch{width:56px;height:56px;border-radius:8px;border:2px solid var(--border,#ddd);cursor:pointer;transition:transform .15s}
+.swatch:hover{transform:scale(1.08)}
+.swatch-info{font-size:.65rem;text-align:center;margin-top:.2rem;font-family:monospace}
+.section-title{font-size:.9rem;font-weight:700;margin-bottom:.75rem;text-transform:uppercase;letter-spacing:.5px;color:var(--primary,#4f46e5)}
+.panel{background:var(--bg,#fff);border:1px solid var(--border,#ddd);border-radius:10px;padding:1.25rem}
+</style>
+</head>
+<body>
+<nav class="navbar"><div class="navbar-inner">
+<a class="navbar-brand" href="../index.html">DevUtils</a>
+<button class="menu-toggle" onclick="document.querySelector('.navbar-links').classList.toggle('open')">☰</button>
+<ul class="navbar-links">
+  <li><a href="json-formatter.html">JSON</a></li>
+  <li><a href="base64.html">Base64</a></li>
+  <li><a href="jwt-decoder.html">JWT</a></li>
+  <li><a href="regex-tester.html">Regex</a></li>
+  <li><a href="color-picker.html">Color</a></li>
+  <li><a href="css-gradient.html">Gradient</a></li>
+  <li><a href="markdown.html">Markdown</a></li>
+  <li><a href="qr-generator.html">QR</a></li>
+  <li><a href="url-codec.html">URL</a></li>
+  <li><a href="hash-generator.html">Hash</a></li>
+  <li><a href="timestamp.html">Timestamp</a></li>
+  <li><a href="lorem-ipsum.html">Lorem</a></li>
+</ul>
+</div></nav>
+
+<main class="container">
+  <div class="tool-header">
+    <h1>Color Picker and Converter</h1>
+    <p>Pick colors visually and convert between HEX, RGB, and HSL formats instantly.</p>
+  </div>
+
+  <div class="tool-layout">
+    <div class="panel">
+      <div class="section-title">Pick a Color</div>
+      <div class="color-preview" id="colorPreview"></div>
+      <input type="color" id="nativePicker" class="native-picker" value="#4f46e5">
+      <div class="input-group"><label>HEX</label><div class="input-row"><input type="text" id="hexInput" value="#4f46e5" maxlength="7" spellcheck="false"><button class="copy-btn" onclick="copyVal('hexInput')">Copy</button></div></div>
+      <div class="input-group"><label>RGB</label><div class="input-row"><input type="text" id="rgbInput" value="79, 70, 229" spellcheck="false"><button class="copy-btn" onclick="copyVal('rgbInput')">Copy</button></div></div>
+      <div class="input-group"><label>RGB (css)</label><div class="input-row"><input type="text" id="rgbCss" value="rgb(79, 70, 229)" spellcheck="false" readonly><button class="copy-btn" onclick="copyVal('rgbCss')">Copy</button></div></div>
+      <div class="input-group"><label>HSL</label><div class="input-row"><input type="text" id="hslInput" value="243, 74%, 59%" spellcheck="false"><button class="copy-btn" onclick="copyVal('hslInput')">Copy</button></div></div>
+      <div class="input-group"><label>HSL (css)</label><div class="input-row"><input type="text" id="hslCss" value="hsl(243, 74%, 59%)" spellcheck="false" readonly><button class="copy-btn" onclick="copyVal('hslCss')">Copy</button></div></div>
+    </div>
+    <div class="panel">
+      <div class="section-title">Palette Suggestions</div>
+      <div id="paletteArea"></div>
+    </div>
+  </div>
+</main>
+
+<footer class="footer"><p>DevUtils - Free developer tools in your browser.</p></footer>
+
+<script>
+(function(){
+  var picker=document.getElementById('nativePicker');
+  var hexIn=document.getElementById('hexInput');
+  var rgbIn=document.getElementById('rgbInput');
+  var rgbCss=document.getElementById('rgbCss');
+  var hslIn=document.getElementById('hslInput');
+  var hslCss=document.getElementById('hslCss');
+  var preview=document.getElementById('colorPreview');
+  var palArea=document.getElementById('paletteArea');
+  var busy=false;
+
+  function hex2rgb(h){h=h.replace('#','');if(h.length===3)h=h[0]+h[0]+h[1]+h[1]+h[2]+h[2];return{r:parseInt(h.substr(0,2),16),g:parseInt(h.substr(2,2),16),b:parseInt(h.substr(4,2),16)};}
+  function rgb2hex(r,g,b){return '#'+[r,g,b].map(function(x){var h=Math.round(Math.max(0,Math.min(255,x))).toString(16);return h.length===1?'0'+h:h;}).join('');}
+  function rgb2hsl(r,g,b){r/=255;g/=255;b/=255;var mx=Math.max(r,g,b),mn=Math.min(r,g,b),h,s,l=(mx+mn)/2;if(mx===mn){h=s=0;}else{var d=mx-mn;s=l>0.5?d/(2-mx-mn):d/(mx+mn);switch(mx){case r:h=((g-b)/d+(g<b?6:0))/6;break;case g:h=((b-r)/d+2)/6;break;case b:h=((r-g)/d+4)/6;break;}}return{h:Math.round(h*360),s:Math.round(s*100),l:Math.round(l*100)};}
+  function hsl2rgb(h,s,l){h/=360;s/=100;l/=100;var r,g,b;if(s===0){r=g=b=l;}else{var q=l<0.5?l*(1+s):l+s-l*s,p=2*l-q;function h2r(p2,q2,t){if(t<0)t+=1;if(t>1)t-=1;if(t<1/6)return p2+(q2-p2)*6*t;if(t<1/2)return q2;if(t<2/3)return p2+(q2-p2)*(2/3-t)*6;return p2;}r=h2r(p,q,h+1/3);g=h2r(p,q,h);b=h2r(p,q,h-1/3);}return{r:Math.round(r*255),g:Math.round(g*255),b:Math.round(b*255)};}
+
+  function update(src,hex,rgb,hsl){
+    if(busy)return;busy=true;
+    var h=hex||rgb2hex(rgb.r,rgb.g,rgb.b);
+    var r=rgb||hex2rgb(h);
+    var hl=hsl||rgb2hsl(r.r,r.g,r.b);
+    if(src!=='picker')picker.value=h;
+    if(src!=='hex')hexIn.value=h;
+    if(src!=='rgb')rgbIn.value=r.r+', '+r.g+', '+r.b;
+    rgbCss.value='rgb('+r.r+', '+r.g+', '+r.b+')';
+    if(src!=='hsl')hslIn.value=hl.h+', '+hl.s+'%, '+hl.l+'%';
+    hslCss.value='hsl('+hl.h+', '+hl.s+'%, '+hl.l+'%)';
+    preview.style.background=h;
+    buildPalette(hl);
+    busy=false;
+  }
+
+  function buildPalette(hsl){
+    var h=hsl.h,s=hsl.s,l=hsl.l;
+    var types=[
+      {label:'Complementary',colors:[{h:(h+150)%360,s:s,l:l},{h:(h+180)%360,s:s,l:l},{h:(h+210)%360,s:s,l:l},{h:(h+180)%360,s:Math.max(s-20,10),l:Math.min(l+20,90)},{h:(h+180)%360,s:Math.min(s+20,100),l:Math.max(l-15,10)}]},
+      {label:'Analogous',colors:[{h:(h+330)%360,s:s,l:l},{h:(h+345)%360,s:s,l:l},{h:h,s:s,l:l},{h:(h+15)%360,s:s,l:l},{h:(h+30)%360,s:s,l:l}]},
+      {label:'Triadic',colors:[{h:h,s:s,l:l},{h:(h+120)%360,s:s,l:l},{h:(h+240)%360,s:s,l:l},{h:(h+120)%360,s:Math.max(s-15,10),l:Math.min(l+15,90)},{h:(h+240)%360,s:Math.max(s-15,10),l:Math.min(l+15,90)}]},
+      {label:'Shades',colors:[{h:h,s:s,l:Math.min(l+30,95)},{h:h,s:s,l:Math.min(l+15,90)},{h:h,s:s,l:l},{h:h,s:s,l:Math.max(l-15,10)},{h:h,s:s,l:Math.max(l-30,5)}]}
+    ];
+    var html='';
+    types.forEach(function(t){
+      html+='<div class="palette-row"><div class="plabel">'+t.label+'</div>';
+      t.colors.forEach(function(c){
+        var rgb=hsl2rgb(c.h,c.s,c.l);
+        var hx=rgb2hex(rgb.r,rgb.g,rgb.b);
+        html+='<div><div class="swatch" style="background:'+hx+'" onclick="window._pick(\''+hx+'\')" title="'+hx+'"></div><div class="swatch-info">'+hx+'</div></div>';
+      });
+      html+='</div>';
+    });
+    palArea.innerHTML=html;
+  }
+
+  picker.addEventListener('input',function(){update('picker',this.value,null,null);});
+  hexIn.addEventListener('input',function(){var v=this.value.trim();if(!v.startsWith('#'))v='#'+v;if(/^#[0-9a-fA-F]{6}$/.test(v)){update('hex',v,null,null);}});
+  rgbIn.addEventListener('input',function(){var p=this.value.split(',').map(function(x){return parseInt(x.trim());});if(p.length===3&&p.every(function(x){return !isNaN(x)&&x>=0&&x<=255;})){update('rgb',null,{r:p[0],g:p[1],b:p[2]},null);}});
+  hslIn.addEventListener('input',function(){var p=this.value.replace(/%/g,'').split(',').map(function(x){return parseFloat(x.trim());});if(p.length===3&&p.every(function(x){return !isNaN(x);})){update('hsl',null,null,{h:Math.max(0,Math.min(360,p[0])),s:Math.max(0,Math.min(100,p[1])),l:Math.max(0,Math.min(100,p[2]))});}});
+
+  window._pick=function(hex){var r=hex2rgb(hex);update('palette',hex,r,null);};
+  window.copyVal=function(id){var el=document.getElementById(id);navigator.clipboard.writeText(el.value).then(function(){var btn=el.parentElement.querySelector('.copy-btn');var o=btn.textContent;btn.textContent='Copied!';setTimeout(function(){btn.textContent=o;},1200);});};
+
+  update('picker','#4f46e5',null,null);
+})();
+</script>
+</body>
+</html>

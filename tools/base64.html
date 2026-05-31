@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Base64 Encoder/Decoder - DevUtils</title>
+<link rel="stylesheet" href="../css/style.css">
+<style>
+  .tool-header{background:linear-gradient(135deg,#f093fb 0%,#f5576c 100%);color:#fff;padding:2rem 1rem;text-align:center}
+  .tool-header h1{margin:0;font-size:1.8rem}
+  .tool-header p{margin:.5rem 0 0;opacity:.9}
+  .tool-area{max-width:1200px;margin:1.5rem auto;padding:0 1rem}
+  .mode-toggle{display:flex;justify-content:center;gap:0;margin-bottom:1rem}
+  .mode-btn{padding:.6rem 1.5rem;border:2px solid #f5576c;background:#fff;color:#f5576c;font-weight:600;cursor:pointer;font-size:.9rem;transition:all .2s}
+  .mode-btn:first-child{border-radius:6px 0 0 6px}
+  .mode-btn:last-child{border-radius:0 6px 6px 0}
+  .mode-btn.active{background:#f5576c;color:#fff}
+  .mode-btn:hover:not(.active){background:#fff0f3}
+  .panels{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem}
+  @media(max-width:768px){.panels{grid-template-columns:1fr}}
+  .panel{background:#fff;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,.08);padding:1rem;display:flex;flex-direction:column}
+  .panel h2{margin:0 0 .75rem;font-size:1.1rem;color:#333;border-bottom:2px solid #eee;padding-bottom:.5rem}
+  textarea{width:100%;min-height:300px;font-family:'Fira Code',monospace,Consolas;font-size:.85rem;border:1px solid #ddd;border-radius:6px;padding:.75rem;resize:vertical;background:#fafafa;color:#333;box-sizing:border-box}
+  textarea:focus{outline:none;border-color:#f5576c;box-shadow:0 0 0 3px rgba(245,87,108,.15)}
+  .btn-row{display:flex;flex-wrap:wrap;gap:.5rem;margin:.75rem 0}
+  .btn{padding:.5rem 1rem;border:none;border-radius:6px;cursor:pointer;font-size:.85rem;font-weight:600;transition:all .2s}
+  .btn:hover{transform:translateY(-1px);box-shadow:0 2px 6px rgba(0,0,0,.15)}
+  .btn:active{transform:translateY(0)}
+  .btn-primary{background:#f5576c;color:#fff}
+  .btn-secondary{background:#6c757d;color:#fff}
+  .btn-info{background:#17a2b8;color:#fff}
+  .btn-warning{background:#ffc107;color:#333}
+  .btn-danger{background:#dc3545;color:#fff}
+  .auto-label{display:flex;align-items:center;gap:.5rem;font-size:.85rem;color:#666;margin-top:.5rem}
+  .auto-label input{width:auto}
+  .error-msg{background:#f8d7da;color:#721c24;border:1px solid #f5c6cb;border-radius:6px;padding:.75rem;margin-top:.5rem;font-family:monospace;white-space:pre-wrap;display:none}
+  footer{text-align:center;padding:2rem 1rem;color:#888;font-size:.85rem}
+</style>
+</head>
+<body>
+<nav class="navbar"><div class="navbar-inner">
+<a class="navbar-brand" href="../index.html">⚡ DevUtils</a>
+<button class="menu-toggle" onclick="document.querySelector('.navbar-links').classList.toggle('open')">☰</button>
+<ul class="navbar-links">
+  <li><a href="json-formatter.html">JSON</a></li>
+  <li><a href="base64.html">Base64</a></li>
+  <li><a href="jwt-decoder.html">JWT</a></li>
+  <li><a href="regex-tester.html">Regex</a></li>
+  <li><a href="color-picker.html">Color</a></li>
+  <li><a href="css-gradient.html">Gradient</a></li>
+  <li><a href="markdown.html">Markdown</a></li>
+  <li><a href="qr-generator.html">QR</a></li>
+  <li><a href="url-codec.html">URL</a></li>
+  <li><a href="hash-generator.html">Hash</a></li>
+  <li><a href="timestamp.html">Timestamp</a></li>
+  <li><a href="lorem-ipsum.html">Lorem</a></li>
+</ul>
+</div></nav>
+
+<div class="tool-header">
+  <h1>🔐 Base64 Encoder/Decoder</h1>
+  <p>Encode and decode Base64 with full UTF-8 support</p>
+</div>
+
+<div class="tool-area">
+  <div class="mode-toggle">
+    <button class="mode-btn active" id="modeEncode" onclick="setMode('encode')">Encode →</button>
+    <button class="mode-btn" id="modeDecode" onclick="setMode('decode')">← Decode</button>
+  </div>
+
+  <div class="panels">
+    <div class="panel">
+      <h2 id="leftLabel">📝 Plain Text</h2>
+      <textarea id="plainInput" placeholder="Type or paste text here..."></textarea>
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="convert()">Convert</button>
+        <button class="btn btn-info" onclick="swapFields()">🔄 Swap</button>
+        <button class="btn btn-secondary" onclick="copyText('plainInput')">📋 Copy</button>
+        <button class="btn btn-danger" onclick="clearField('plainInput')">Clear</button>
+      </div>
+    </div>
+    <div class="panel">
+      <h2 id="rightLabel">🔒 Base64</h2>
+      <textarea id="base64Input" placeholder="Base64 output will appear here..."></textarea>
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="convert()">Convert</button>
+        <button class="btn btn-secondary" onclick="copyText('base64Input')">📋 Copy</button>
+        <button class="btn btn-danger" onclick="clearField('base64Input')">Clear</button>
+      </div>
+    </div>
+  </div>
+
+  <label class="auto-label">
+    <input type="checkbox" id="autoConvert" checked> Auto-convert on typing
+  </label>
+  <div id="errorMsg" class="error-msg"></div>
+</div>
+
+<footer>
+  <p>Base64 Encoder/Decoder — Part of <a href="../index.html">DevUtils</a> toolkit</p>
+</footer>
+
+<script>
+const plainEl = document.getElementById('plainInput');
+const base64El = document.getElementById('base64Input');
+const autoCheck = document.getElementById('autoConvert');
+const errorEl = document.getElementById('errorMsg');
+let currentMode = 'encode';
+let debounceTimer = null;
+
+function setMode(mode) {
+  currentMode = mode;
+  document.getElementById('modeEncode').classList.toggle('active', mode === 'encode');
+  document.getElementById('modeDecode').classList.toggle('active', mode === 'decode');
+  document.getElementById('leftLabel').textContent = mode === 'encode' ? '📝 Plain Text' : '🔒 Base64';
+  document.getElementById('rightLabel').textContent = mode === 'encode' ? '🔒 Base64' : '📝 Plain Text';
+}
+
+// UTF-8 safe Base64 encode
+function utf8ToBase64(str) {
+  const bytes = new TextEncoder().encode(str);
+  let binary = '';
+  for (let i = 0; i < bytes.length; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  return btoa(binary);
+}
+
+// UTF-8 safe Base64 decode
+function base64ToUtf8(b64) {
+  const binary = atob(b64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+  return new TextDecoder().decode(bytes);
+}
+
+function convert() {
+  hideError();
+  if (currentMode === 'encode') {
+    try {
+      const result = utf8ToBase64(plainEl.value);
+      base64El.value = result;
+    } catch (e) {
+      showError('Encoding error: ' + e.message);
+    }
+  } else {
+    try {
+      const result = base64ToUtf8(plainEl.value.trim());
+      base64El.value = result;
+    } catch (e) {
+      showError('Decoding error: Invalid Base64 string — ' + e.message);
+    }
+  }
+}
+
+function swapFields() {
+  const tmp = plainEl.value;
+  plainEl.value = base64El.value;
+  base64El.value = tmp;
+  setMode(currentMode === 'encode' ? 'decode' : 'encode');
+}
+
+function copyText(id) {
+  const el = document.getElementById(id);
+  if (!el.value) return;
+  navigator.clipboard.writeText(el.value).then(() => {
+    const btn = el.closest('.panel').querySelector('.btn-secondary');
+    const orig = btn.textContent;
+    btn.textContent = '✅ Copied!';
+    setTimeout(() => btn.textContent = orig, 1500);
+  });
+}
+
+function clearField(id) {
+  document.getElementById(id).value = '';
+  // Clear the other field too if auto is on
+  if (id === 'plainInput') base64El.value = '';
+  else plainEl.value = '';
+}
+
+function showError(msg) {
+  errorEl.textContent = msg;
+  errorEl.style.display = 'block';
+}
+
+function hideError() {
+  errorEl.style.display = 'none';
+}
+
+function debouncedConvert() {
+  if (!autoCheck.checked) return;
+  clearTimeout(debounceTimer);
+  debounceTimer = setTimeout(convert, 300);
+}
+
+plainEl.addEventListener('input', debouncedConvert);
+</script>
+</body>
+</html>

@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CSS Gradient Generator - DevUtils</title>
+<link rel="stylesheet" href="../css/style.css">
+<style>
+.tool-layout{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;max-width:1100px;margin:0 auto}
+@media(max-width:900px){.tool-layout{grid-template-columns:1fr}}
+.panel{background:var(--bg,#fff);border:1px solid var(--border,#ddd);border-radius:10px;padding:1.25rem}
+.section-title{font-size:.9rem;font-weight:700;margin-bottom:.75rem;text-transform:uppercase;letter-spacing:.5px;color:var(--primary,#4f46e5)}
+.gradient-preview{width:100%;height:300px;border-radius:10px;border:2px solid var(--border,#ddd);margin-bottom:1rem}
+.controls-row{display:flex;gap:.75rem;margin-bottom:1rem;flex-wrap:wrap;align-items:center}
+.controls-row label{font-weight:600;font-size:.85rem}
+.controls-row select,.controls-row input[type="range"]{padding:.35rem;border:1px solid var(--border,#ddd);border-radius:6px;background:var(--bg,#fff)}
+.controls-row input[type="range"]{flex:1;min-width:100px}
+.angle-val{font-family:monospace;font-size:.85rem;min-width:40px}
+.stop-list{display:flex;flex-direction:column;gap:.5rem;margin-bottom:1rem}
+.stop-item{display:flex;gap:.5rem;align-items:center;padding:.5rem;background:var(--bg-secondary,#f9f9f9);border-radius:8px;border:1px solid var(--border,#eee)}
+.stop-item input[type="color"]{width:40px;height:34px;border:1px solid var(--border,#ddd);border-radius:4px;padding:2px;cursor:pointer}
+.stop-item input[type="range"]{flex:1}
+.stop-item .pos-val{font-family:monospace;font-size:.8rem;min-width:36px}
+.stop-item .remove-btn{background:#ef4444;color:#fff;border:none;border-radius:4px;padding:.3rem .6rem;cursor:pointer;font-size:.8rem}
+.stop-item .remove-btn:hover{background:#dc2626}
+.btn{padding:.5rem 1rem;border:1px solid var(--border,#ddd);border-radius:6px;cursor:pointer;font-size:.85rem;transition:all .2s}
+.btn-primary{background:var(--primary,#4f46e5);color:#fff;border-color:var(--primary,#4f46e5)}
+.btn-primary:hover{opacity:.9}
+.btn-secondary{background:var(--bg-secondary,#f5f5f5)}
+.btn-secondary:hover{background:var(--border,#ddd)}
+.css-output{background:var(--bg-secondary,#f5f5f5);border:1px solid var(--border,#ddd);border-radius:8px;padding:1rem;font-family:monospace;font-size:.82rem;white-space:pre-wrap;word-break:break-all;position:relative;max-height:200px;overflow-y:auto;line-height:1.5}
+.copy-btn{position:absolute;top:.5rem;right:.5rem;padding:.3rem .7rem;border:1px solid var(--border,#ddd);border-radius:6px;background:#fff;cursor:pointer;font-size:.8rem}
+.copy-btn:hover{background:var(--primary,#4f46e5);color:#fff}
+.presets{display:flex;flex-wrap:wrap;gap:.5rem;margin-bottom:1rem}
+.preset-swatch{width:48px;height:48px;border-radius:8px;border:2px solid var(--border,#ddd);cursor:pointer;transition:transform .15s}
+.preset-swatch:hover{transform:scale(1.1)}
+.shape-toggle{display:flex;gap:.5rem}
+.shape-toggle button{padding:.35rem .7rem;border:1px solid var(--border,#ddd);border-radius:6px;cursor:pointer;background:var(--bg,#fff);font-size:.8rem}
+.shape-toggle button.active{background:var(--primary,#4f46e5);color:#fff;border-color:var(--primary,#4f46e5)}
+</style>
+</head>
+<body>
+<nav class="navbar"><div class="navbar-inner">
+<a class="navbar-brand" href="../index.html">DevUtils</a>
+<button class="menu-toggle" onclick="document.querySelector('.navbar-links').classList.toggle('open')">☰</button>
+<ul class="navbar-links">
+  <li><a href="json-formatter.html">JSON</a></li>
+  <li><a href="base64.html">Base64</a></li>
+  <li><a href="jwt-decoder.html">JWT</a></li>
+  <li><a href="regex-tester.html">Regex</a></li>
+  <li><a href="color-picker.html">Color</a></li>
+  <li><a href="css-gradient.html">Gradient</a></li>
+  <li><a href="markdown.html">Markdown</a></li>
+  <li><a href="qr-generator.html">QR</a></li>
+  <li><a href="url-codec.html">URL</a></li>
+  <li><a href="hash-generator.html">Hash</a></li>
+  <li><a href="timestamp.html">Timestamp</a></li>
+  <li><a href="lorem-ipsum.html">Lorem</a></li>
+</ul>
+</div></nav>
+
+<main class="container">
+  <div class="tool-header">
+    <h1>CSS Gradient Generator</h1>
+    <p>Create beautiful CSS gradients visually with live preview and code output.</p>
+  </div>
+  <div class="tool-layout">
+    <div class="panel">
+      <div class="section-title">Preview</div>
+      <div class="gradient-preview" id="preview"></div>
+      <div class="section-title">Presets</div>
+      <div class="presets" id="presets"></div>
+      <div class="section-title">Settings</div>
+      <div class="controls-row">
+        <label>Type:</label>
+        <select id="gradType" onchange="render()">
+          <option value="linear">Linear</option>
+          <option value="radial">Radial</option>
+        </select>
+      </div>
+      <div class="controls-row" id="angleRow">
+        <label>Angle:</label>
+        <input type="range" id="angle" min="0" max="360" value="90" oninput="render();document.getElementById('angleVal').textContent=this.value+'°'">
+        <span class="angle-val" id="angleVal">90°</span>
+      </div>
+      <div class="controls-row" id="shapeRow" style="display:none">
+        <label>Shape:</label>
+        <div class="shape-toggle">
+          <button id="shapeCircle" class="active" onclick="setShape('circle')">Circle</button>
+          <button id="shapeEllipse" onclick="setShape('ellipse')">Ellipse</button>
+        </div>
+      </div>
+      <div class="section-title">Color Stops</div>
+      <div class="stop-list" id="stopList"></div>
+      <div style="display:flex;gap:.5rem">
+        <button class="btn btn-primary" onclick="addStop('#ffffff',50)">+ Add Stop</button>
+        <button class="btn btn-secondary" onclick="resetStops()">Reset</button>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="section-title">CSS Code</div>
+      <div class="css-output" id="output"><button class="copy-btn" onclick="copyCSS()">Copy</button><span id="codeText"></span></div>
+      <div class="section-title" style="margin-top:1.5rem">Browser Support</div>
+      <div class="css-output" id="outputCompat"><button class="copy-btn" onclick="copyCompat()">Copy</button><span id="codeCompat"></span></div>
+    </div>
+  </div>
+</main>
+
+<footer class="footer"><p>DevUtils - Free developer tools in your browser.</p></footer>
+
+<script>
+var stops=[
+  {color:'#667eea',pos:0},
+  {color:'#764ba2',pos:100}
+];
+var shape='ellipse';
+
+var presets=[
+  {name:'Sunset',stops:[{color:'#f093fb',pos:0},{color:'#f5576c',pos:100}]},
+  {name:'Ocean',stops:[{color:'#667eea',pos:0},{color:'#764ba2',pos:100}]},
+  {name:'Green',stops:[{color:'#11998e',pos:0},{color:'#38ef7d',pos:100}]},
+  {name:'Fire',stops:[{color:'#f12711',pos:0},{color:'#f5af19',pos:100}]},
+  {name:'Purple',stops:[{color:'#a18cd1',pos:0},{color:'#fbc2eb',pos:100}]},
+  {name:'Night',stops:[{color:'#0f0c29',pos:0},{color:'#302b63',pos:50},{color:'#24243e',pos:100}]},
+  {name:'Rainbow',stops:[{color:'#ff0000',pos:0},{color:'#ff8800',pos:17},{color:'#ffff00',pos:33},{color:'#00ff00',pos:50},{color:'#0088ff',pos:67},{color:'#8800ff',pos:83},{color:'#ff00ff',pos:100}]},
+  {name:'Warm',stops:[{color:'#ee9ca7',pos:0},{color:'#ffdde1',pos:100}]}
+];
+
+function initPresets(){
+  var el=document.getElementById('presets');
+  var html='';
+  presets.forEach(function(p,i){
+    var grad='linear-gradient(90deg, '+p.stops.map(function(s){return s.color+' '+s.pos+'%';}).join(', ')+')';
+    html+='<div class="preset-swatch" style="background:'+grad+'" title="'+p.name+'" onclick="loadPreset('+i+')"></div>';
+  });
+  el.innerHTML=html;
+}
+
+function loadPreset(i){
+  stops=JSON.parse(JSON.stringify(presets[i].stops));
+  render();
+}
+
+function addStop(col,pos){
+  if(stops.length>=10)return;
+  stops.push({color:col||'#ffffff',pos:pos!==undefined?pos:50});
+  stops.sort(function(a,b){return a.pos-b.pos;});
+  render();
+}
+
+function removeStop(idx){
+  if(stops.length<=2)return;
+  stops.splice(idx,1);
+  render();
+}
+
+function resetStops(){
+  stops=[{color:'#667eea',pos:0},{color:'#764ba2',pos:100}];
+  document.getElementById('angle').value=90;
+  document.getElementById('angleVal').textContent='90°';
+  document.getElementById('gradType').value='linear';
+  document.getElementById('angleRow').style.display='';
+  document.getElementById('shapeRow').style.display='none';
+  render();
+}
+
+function setShape(s){
+  shape=s;
+  document.getElementById('shapeCircle').classList.toggle('active',s==='circle');
+  document.getElementById('shapeEllipse').classList.toggle('active',s==='ellipse');
+  render();
+}
+
+function buildStopList(){
+  var el=document.getElementById('stopList');
+  var html='';
+  stops.forEach(function(s,i){
+    html+='<div class="stop-item">';
+    html+='<input type="color" value="'+s.color+'" onchange="stops['+i+'].color=this.value;render()">';
+    html+='<input type="range" min="0" max="100" value="'+s.pos+'" oninput="stops['+i+'].pos=parseInt(this.value);this.nextElementSibling.textContent=this.value+\'%\';render()">';
+    html+='<span class="pos-val">'+s.pos+'%</span>';
+    if(stops.length>2) html+='<button class="remove-btn" onclick="removeStop('+i+')">X</button>';
+    html+='</div>';
+  });
+  el.innerHTML=html;
+}
+
+function getCSS(){
+  var type=document.getElementById('gradType').value;
+  var angle=parseInt(document.getElementById('angle').value);
+  var stopsStr=stops.map(function(s){return s.color+' '+s.pos+'%';}).join(', ');
+  if(type==='linear') return 'linear-gradient('+angle+'deg, '+stopsStr+')';
+  return 'radial-gradient('+shape+', '+stopsStr+')';
+}
+
+function render(){
+  var type=document.getElementById('gradType').value;
+  document.getElementById('angleRow').style.display=type==='linear'?'':'none';
+  document.getElementById('shapeRow').style.display=type==='radial'?'':'none';
+  buildStopList();
+  var css=getCSS();
+  document.getElementById('preview').style.background=css;
+  document.getElementById('codeText').textContent='background: '+css+';';
+  document.getElementById('codeCompat').textContent='background: -webkit-'+css+';\nbackground: -moz-'+css+';\nbackground: '+css+';';
+}
+
+function copyCSS(){
+  navigator.clipboard.writeText('background: '+getCSS()+';').then(function(){
+    var btn=document.querySelectorAll('.copy-btn')[0];
+    var o=btn.textContent;btn.textContent='Copied!';setTimeout(function(){btn.textContent=o;},1200);
+  });
+}
+function copyCompat(){
+  var css=getCSS();
+  navigator.clipboard.writeText('background: -webkit-'+css+';\nbackground: -moz-'+css+';\nbackground: '+css+';').then(function(){
+    var btn=document.querySelectorAll('.copy-btn')[1];
+    var o=btn.textContent;btn.textContent='Copied!';setTimeout(function(){btn.textContent=o;},1200);
+  });
+}
+
+initPresets();
+render();
+</script>
+</body>
+</html>

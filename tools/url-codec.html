@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>URL Encoder/Decoder - DevUtils</title>
+<link rel="stylesheet" href="../css/style.css">
+<style>
+.tool-container{max-width:960px;margin:0 auto;padding:20px}
+.tool-header{text-align:center;margin-bottom:24px}
+.tool-header h1{font-size:1.8rem;margin-bottom:6px}
+.tool-header p{color:#888;font-size:.95rem}
+.panel{background:var(--card-bg,#1e1e2e);border-radius:10px;padding:20px;margin-bottom:16px;border:1px solid var(--border,#333)}
+.panel textarea{width:100%;min-height:120px;background:var(--input-bg,#11111b);color:var(--text,#cdd6f4);border:1px solid var(--border,#333);border-radius:8px;padding:12px;font-family:monospace;font-size:.9rem;resize:vertical;box-sizing:border-box}
+.panel textarea:focus{outline:none;border-color:var(--accent,#89b4fa)}
+.btn-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.btn{padding:8px 16px;border:none;border-radius:6px;cursor:pointer;font-size:.85rem;font-weight:600;transition:background .2s}
+.btn-primary{background:var(--accent,#89b4fa);color:#111}
+.btn-secondary{background:var(--surface2,#313244);color:var(--text,#cdd6f4)}
+.btn-danger{background:#f38ba8;color:#111}
+.btn:hover{opacity:.85}
+.toggle-row{display:flex;align-items:center;gap:12px;margin-bottom:12px;font-size:.9rem}
+.toggle-row label{display:flex;align-items:center;gap:6px;cursor:pointer}
+.toggle-row input[type=radio]{accent-color:var(--accent,#89b4fa)}
+.info-box{background:var(--surface2,#313244);border-radius:8px;padding:12px;font-size:.82rem;color:#a6adc8;margin-top:12px;line-height:1.6}
+.info-box .encoded-chars{color:var(--accent,#89b4fa);font-family:monospace}
+.stats{display:flex;gap:16px;font-size:.8rem;color:#888;margin-top:8px}
+</style>
+</head>
+<body>
+<nav class="navbar"><div class="navbar-inner">
+<a class="navbar-brand" href="../index.html">⚡ DevUtils</a>
+<button class="menu-toggle" onclick="document.querySelector('.navbar-links').classList.toggle('open')">☰</button>
+<ul class="navbar-links">
+  <li><a href="json-formatter.html">JSON</a></li>
+  <li><a href="base64.html">Base64</a></li>
+  <li><a href="jwt-decoder.html">JWT</a></li>
+  <li><a href="regex-tester.html">Regex</a></li>
+  <li><a href="color-picker.html">Color</a></li>
+  <li><a href="css-gradient.html">Gradient</a></li>
+  <li><a href="markdown.html">Markdown</a></li>
+  <li><a href="qr-generator.html">QR</a></li>
+  <li><a href="url-codec.html">URL</a></li>
+  <li><a href="hash-generator.html">Hash</a></li>
+  <li><a href="timestamp.html">Timestamp</a></li>
+  <li><a href="lorem-ipsum.html">Lorem</a></li>
+</ul>
+</div></nav>
+
+<div class="tool-container">
+  <div class="tool-header">
+    <h1>🔗 URL Encoder / Decoder</h1>
+    <p>Encode or decode URLs and text with encodeURIComponent or encodeURI</p>
+  </div>
+
+  <div class="toggle-row">
+    <span style="font-weight:600">Mode:</span>
+    <label><input type="radio" name="mode" value="encode" checked> Encode</label>
+    <label><input type="radio" name="mode" value="decode"> Decode</label>
+    <span style="margin-left:20px;font-weight:600">Function:</span>
+    <label><input type="radio" name="func" value="component" checked> encodeURIComponent</label>
+    <label><input type="radio" name="func" value="uri"> encodeURI</label>
+  </div>
+
+  <div class="panel">
+    <label style="font-weight:600;font-size:.9rem;margin-bottom:6px;display:block">Input</label>
+    <textarea id="inputArea" placeholder="Enter URL or text here..." spellcheck="false"></textarea>
+    <div class="stats">
+      <span>Length: <strong id="inputLen">0</strong></span>
+      <span>Characters: <strong id="inputChars">0</strong></span>
+    </div>
+  </div>
+
+  <div class="btn-row">
+    <button class="btn btn-primary" onclick="convert()">▶ Convert</button>
+    <button class="btn btn-secondary" onclick="copyOutput()">📋 Copy Output</button>
+    <button class="btn btn-secondary" onclick="swapValues()">🔄 Swap</button>
+    <button class="btn btn-danger" onclick="clearAll()">✕ Clear</button>
+  </div>
+
+  <div class="panel">
+    <label style="font-weight:600;font-size:.9rem;margin-bottom:6px;display:block">Output</label>
+    <textarea id="outputArea" readonly spellcheck="false"></textarea>
+    <div class="stats">
+      <span>Length: <strong id="outputLen">0</strong></span>
+      <span>Encoded chars: <strong id="encodedCount">0</strong></span>
+    </div>
+    <div class="info-box" id="infoBox" style="display:none">
+      <strong>Encoded characters:</strong><br>
+      <span id="encodedCharsList"></span>
+    </div>
+  </div>
+</div>
+
+<footer style="text-align:center;padding:24px;color:#666;font-size:.8rem">
+  DevUtils — Developer Tools for Everyday Use
+</footer>
+
+<script>
+const $=id=>document.getElementById(id);
+let debounceTimer=null;
+
+function getMode(){return document.querySelector('input[name=mode]:checked').value}
+function getFunc(){return document.querySelector('input[name=func]:checked').value}
+
+function convert(){
+  const input=$('inputArea').value;
+  const mode=getMode();
+  const func=getFunc();
+  let output='';
+  try{
+    if(mode==='encode'){
+      output=func==='component'?encodeURIComponent(input):encodeURI(input);
+    }else{
+      output=decodeURIComponent(input);
+    }
+  }catch(e){
+    output='Error: '+e.message;
+  }
+  $('outputArea').value=output;
+  updateStats(input,output);
+}
+
+function updateStats(input,output){
+  $('inputLen').textContent=input.length;
+  $('inputChars').textContent=[...new Set(input)].length;
+  $('outputLen').textContent=output.length;
+  if(getMode()==='encode'){
+    const encoded=[];
+    const re=/%[0-9A-Fa-f]{2}/g;
+    let m;
+    const seen=new Set();
+    while((m=re.exec(output))!==null){
+      const code=parseInt(m[0].slice(1),16);
+      const ch=String.fromCharCode(code);
+      if(!seen.has(m[0])){seen.add(m[0]);encoded.push(m[0]+' ← '+ch)}
+    }
+    $('encodedCount').textContent=seen.size;
+    if(seen.size>0){
+      $('infoBox').style.display='block';
+      $('encodedCharsList').innerHTML=encoded.map(e=>'<span class="encoded-chars">'+e+'</span>').join(' &nbsp;|&nbsp; ');
+    }else{$('infoBox').style.display='none'}
+  }else{$('encodedCount').textContent='—';$('infoBox').style.display='none'}
+}
+
+function copyOutput(){
+  const text=$('outputArea').value;
+  if(!text)return;
+  navigator.clipboard.writeText(text).then(()=>{
+    const btn=document.querySelector('.btn-secondary');
+    const orig=btn.textContent;btn.textContent='✓ Copied!';
+    setTimeout(()=>btn.textContent=orig,1500);
+  });
+}
+
+function swapValues(){
+  const tmp=$('inputArea').value;
+  $('inputArea').value=$('outputArea').value;
+  $('outputArea').value=tmp;
+  const modeEls=document.querySelectorAll('input[name=mode]');
+  modeEls[0].checked=!modeEls[0].checked;
+  modeEls[1].checked=!modeEls[1].checked;
+  convert();
+}
+
+function clearAll(){
+  $('inputArea').value='';
+  $('outputArea').value='';
+  $('infoBox').style.display='none';
+  $('inputLen').textContent='0';
+  $('inputChars').textContent='0';
+  $('outputLen').textContent='0';
+  $('encodedCount').textContent='0';
+}
+
+$('inputArea').addEventListener('input',()=>{
+  clearTimeout(debounceTimer);
+  debounceTimer=setTimeout(convert,300);
+});
+document.querySelectorAll('input[name=mode],input[name=func]').forEach(el=>{
+  el.addEventListener('change',convert);
+});
+</script>
+</body>
+</html>

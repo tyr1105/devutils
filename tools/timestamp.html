@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Timestamp Converter - DevUtils</title>
+<link rel="stylesheet" href="../css/style.css">
+<style>
+.tool-container{max-width:960px;margin:0 auto;padding:20px}
+.tool-header{text-align:center;margin-bottom:24px}
+.tool-header h1{font-size:1.8rem;margin-bottom:6px}
+.tool-header p{color:#888;font-size:.95rem}
+.panel{background:var(--card-bg,#1e1e2e);border-radius:10px;padding:20px;margin-bottom:16px;border:1px solid var(--border,#333)}
+.btn{padding:8px 16px;border:none;border-radius:6px;cursor:pointer;font-size:.85rem;font-weight:600;transition:background .2s}
+.btn-primary{background:var(--accent,#89b4fa);color:#111}
+.btn-secondary{background:var(--surface2,#313244);color:var(--text,#cdd6f4)}
+.btn:hover{opacity:.85}
+.btn-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.input-row{display:flex;gap:12px;align-items:center;margin-bottom:12px;flex-wrap:wrap}
+.input-row label{font-weight:600;font-size:.9rem;min-width:120px}
+.input-row input,.input-row select{background:var(--input-bg,#11111b);color:var(--text,#cdd6f4);border:1px solid var(--border,#333);border-radius:6px;padding:8px 12px;font-size:.9rem;font-family:monospace}
+.input-row input:focus,.input-row select:focus{outline:none;border-color:var(--accent,#89b4fa)}
+.current-ts{text-align:center;padding:16px;margin-bottom:16px}
+.current-ts .ts-val{font-size:2rem;font-family:monospace;font-weight:700;color:var(--accent,#89b4fa)}
+.current-ts .ts-label{font-size:.85rem;color:#888;margin-top:4px}
+.format-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px;margin-top:12px}
+.format-card{background:var(--surface2,#313244);border-radius:8px;padding:12px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.format-card .label{font-size:.8rem;color:#888;min-width:60px}
+.format-card .value{font-family:monospace;font-size:.85rem;color:var(--text,#cdd6f4);word-break:break-all;flex:1}
+.format-card .copy-sm{padding:2px 8px;font-size:.7rem}
+.tz-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px;margin-top:12px}
+.tz-card{background:var(--surface2,#313244);border-radius:8px;padding:10px;text-align:center}
+.tz-card .tz-name{font-size:.75rem;color:#888;margin-bottom:4px}
+.tz-card .tz-time{font-family:monospace;font-size:.9rem;color:var(--text,#cdd6f4)}
+</style>
+</head>
+<body>
+<nav class="navbar"><div class="navbar-inner">
+<a class="navbar-brand" href="../index.html">⚡ DevUtils</a>
+<button class="menu-toggle" onclick="document.querySelector('.navbar-links').classList.toggle('open')">☰</button>
+<ul class="navbar-links">
+  <li><a href="json-formatter.html">JSON</a></li>
+  <li><a href="base64.html">Base64</a></li>
+  <li><a href="jwt-decoder.html">JWT</a></li>
+  <li><a href="regex-tester.html">Regex</a></li>
+  <li><a href="color-picker.html">Color</a></li>
+  <li><a href="css-gradient.html">Gradient</a></li>
+  <li><a href="markdown.html">Markdown</a></li>
+  <li><a href="qr-generator.html">QR</a></li>
+  <li><a href="url-codec.html">URL</a></li>
+  <li><a href="hash-generator.html">Hash</a></li>
+  <li><a href="timestamp.html">Timestamp</a></li>
+  <li><a href="lorem-ipsum.html">Lorem</a></li>
+</ul>
+</div></nav>
+
+<div class="tool-container">
+  <div class="tool-header">
+    <h1>⏱️ Timestamp Converter</h1>
+    <p>Convert between Unix timestamps and human-readable dates</p>
+  </div>
+
+  <div class="current-ts">
+    <div class="ts-label">Current Unix Timestamp</div>
+    <div class="ts-val" id="liveTimestamp">—</div>
+    <div class="ts-label" id="liveLocal">—</div>
+  </div>
+
+  <div class="btn-row" style="justify-content:center;margin-bottom:16px">
+    <button class="btn btn-primary" onclick="setNow()">Now</button>
+    <button class="btn btn-secondary" onclick="offsetTimestamp(3600)">+1 hour</button>
+    <button class="btn btn-secondary" onclick="offsetTimestamp(86400)">+1 day</button>
+    <button class="btn btn-secondary" onclick="offsetTimestamp(604800)">+1 week</button>
+    <button class="btn btn-secondary" onclick="offsetTimestamp(2592000)">+1 month</button>
+  </div>
+
+  <div class="panel">
+    <h3 style="margin:0 0 12px;font-size:1rem">Timestamp → Date</h3>
+    <div class="input-row">
+      <label>Unix Timestamp:</label>
+      <input type="text" id="tsInput" placeholder="e.g. 1700000000" style="width:200px">
+      <select id="tsUnit" onchange="tsToDate()">
+        <option value="s">Seconds</option>
+        <option value="ms">Milliseconds</option>
+      </select>
+      <button class="btn btn-primary" onclick="tsToDate()">Convert →</button>
+    </div>
+    <div class="format-grid" id="tsFormats"></div>
+  </div>
+
+  <div class="panel">
+    <h3 style="margin:0 0 12px;font-size:1rem">Date → Timestamp</h3>
+    <div class="input-row">
+      <label>Date and Time:</label>
+      <input type="datetime-local" id="dateInput" style="width:250px">
+      <button class="btn btn-primary" onclick="dateToTs()">Convert →</button>
+    </div>
+    <div style="margin-top:8px;font-family:monospace;font-size:1.1rem;color:var(--accent,#89b4fa)" id="tsResult"></div>
+  </div>
+
+  <div class="panel">
+    <h3 style="margin:0 0 8px;font-size:1rem">🌍 Live World Clock</h3>
+    <div class="tz-grid" id="tzGrid"></div>
+  </div>
+</div>
+
+<footer style="text-align:center;padding:24px;color:#666;font-size:.8rem">
+  DevUtils — Developer Tools for Everyday Use
+</footer>
+
+<script>
+var timezones=[
+  {name:'Local',tz:Intl.DateTimeFormat().resolvedOptions().timeZone},
+  {name:'UTC',tz:'UTC'},
+  {name:'New York (EST/EDT)',tz:'America/New_York'},
+  {name:'London (GMT/BST)',tz:'Europe/London'},
+  {name:'Berlin (CET/CEST)',tz:'Europe/Berlin'},
+  {name:'Dubai (GST)',tz:'Asia/Dubai'},
+  {name:'Mumbai (IST)',tz:'Asia/Kolkata'},
+  {name:'Shanghai (CST)',tz:'Asia/Shanghai'},
+  {name:'Tokyo (JST)',tz:'Asia/Tokyo'},
+  {name:'Sydney (AEST/AEDT)',tz:'Australia/Sydney'}
+];
+
+function updateLive(){
+  var now=Date.now();
+  var sec=Math.floor(now/1000);
+  document.getElementById('liveTimestamp').textContent=sec;
+  document.getElementById('liveLocal').textContent=new Date(now).toLocaleString();
+  var grid=document.getElementById('tzGrid');
+  grid.innerHTML='';
+  for(var i=0;i<timezones.length;i++){
+    var tz=timezones[i];
+    var d=new Date(now).toLocaleString('en-US',{timeZone:tz.tz,hour12:false,year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit'});
+    var card=document.createElement('div');card.className='tz-card';
+    card.innerHTML='<div class="tz-name">'+tz.name+' ('+tz.tz+')</div><div class="tz-time">'+d+'</div>';
+    grid.appendChild(card);
+  }
+}
+
+function relativeTime(date){
+  var now=Date.now();
+  var diff=now-date.getTime();
+  var abs=Math.abs(diff);
+  var suffix=diff>0?'ago':'from now';
+  var units=[
+    {n:31536000,l:'year'},{n:2592000,l:'month'},{n:604800,l:'week'},
+    {n:86400,l:'day'},{n:3600,l:'hour'},{n:60,l:'minute'},{n:1,l:'second'}
+  ];
+  for(var j=0;j<units.length;j++){
+    var v=Math.floor(abs/1000/units[j].n);
+    if(v>=1)return v+' '+units[j].l+(v>1?'s':'')+' '+suffix;
+  }
+  return 'just now';
+}
+
+function tsToDate(){
+  var val=document.getElementById('tsInput').value.trim();
+  if(!val)return;
+  var ms=Number(val);
+  if(document.getElementById('tsUnit').value==='s')ms*=1000;
+  var d=new Date(ms);
+  if(isNaN(d.getTime())){
+    document.getElementById('tsFormats').innerHTML='<div style="color:#f38ba8">Invalid timestamp</div>';
+    return;
+  }
+  var formats=[
+    {label:'ISO 8601',value:d.toISOString()},
+    {label:'UTC',value:d.toUTCString()},
+    {label:'Local',value:d.toLocaleString()},
+    {label:'Relative',value:relativeTime(d)},
+    {label:'Date Only',value:d.toLocaleDateString()},
+    {label:'Time Only',value:d.toLocaleTimeString()},
+    {label:'Unix (sec)',value:Math.floor(ms/1000).toString()},
+    {label:'Unix (ms)',value:ms.toString()}
+  ];
+  var html='';
+  for(var i=0;i<formats.length;i++){
+    html+='<div class="format-card"><span class="label">'+formats[i].label+'</span><span class="value">'+formats[i].value+'</span><button class="btn btn-secondary copy-sm" onclick="copyVal(this,\''+formats[i].value.replace(/'/g,"\\'")+'\')">📋</button></div>';
+  }
+  document.getElementById('tsFormats').innerHTML=html;
+}
+
+function dateToTs(){
+  var val=document.getElementById('dateInput').value;
+  if(!val)return;
+  var d=new Date(val);
+  var sec=Math.floor(d.getTime()/1000);
+  document.getElementById('tsResult').innerHTML=
+    '<span>Unix Timestamp:</span> <strong>'+sec+'</strong> (seconds) | <strong>'+d.getTime()+'</strong> (ms)'+
+    ' <button class="btn btn-secondary" style="font-size:.75rem;padding:3px 8px;margin-left:8px" onclick="navigator.clipboard.writeText(\''+sec+'\');this.textContent=\'Copied\'">📋 Copy</button>';
+}
+
+function setNow(){
+  var now=Math.floor(Date.now()/1000);
+  document.getElementById('tsInput').value=now;
+  var d=new Date();
+  var local=new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,16);
+  document.getElementById('dateInput').value=local;
+  tsToDate();
+  dateToTs();
+}
+
+function offsetTimestamp(offset){
+  var val=Number(document.getElementById('tsInput').value)||Math.floor(Date.now()/1000);
+  val+=offset;
+  document.getElementById('tsInput').value=val;
+  var d=new Date(val*1000);
+  var local=new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,16);
+  document.getElementById('dateInput').value=local;
+  tsToDate();
+  dateToTs();
+}
+
+function copyVal(btn,text){
+  navigator.clipboard.writeText(text);
+  btn.textContent='✓';setTimeout(function(){btn.textContent='📋'},1000);
+}
+
+document.getElementById('tsInput').addEventListener('keydown',function(e){if(e.key==='Enter')tsToDate()});
+
+setNow();
+setInterval(updateLive,1000);
+updateLive();
+</script>
+</body>
+</html>
